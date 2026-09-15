@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseProviderEnvironment } from '@/lib/config';
+import { parseAuthEnvironment, parseProviderEnvironment } from '@/lib/config';
 import { AppError } from '@/lib/errors';
 
 describe('parseProviderEnvironment', () => {
@@ -54,5 +54,40 @@ describe('parseProviderEnvironment', () => {
     } catch (error) {
       expect(String(error)).not.toContain('private-value');
     }
+  });
+});
+
+describe('parseAuthEnvironment', () => {
+  it('accepts email and password authentication without Google credentials', () => {
+    expect(parseAuthEnvironment({ BETTER_AUTH_URL: 'http://localhost:5173' })).toEqual({
+      BETTER_AUTH_URL: 'http://localhost:5173',
+    });
+  });
+
+  it('accepts complete Google credentials without exposing their values', () => {
+    expect(
+      parseAuthEnvironment({
+        GOOGLE_CLIENT_ID: 'google-client-id',
+        GOOGLE_CLIENT_SECRET: 'google-client-secret',
+      }),
+    ).toEqual({
+      GOOGLE_CLIENT_ID: 'google-client-id',
+      GOOGLE_CLIENT_SECRET: 'google-client-secret',
+    });
+  });
+
+  it('rejects partial Google credentials', () => {
+    expect(() => parseAuthEnvironment({ GOOGLE_CLIENT_ID: 'google-client-id' })).toThrow(
+      'Authentication configuration is invalid: GOOGLE_CLIENT_ID.',
+    );
+  });
+
+  it('rejects short secrets and unsafe URL schemes', () => {
+    expect(() => parseAuthEnvironment({ BETTER_AUTH_SECRET: 'short' })).toThrow(
+      'Authentication configuration is invalid: BETTER_AUTH_SECRET.',
+    );
+    expect(() => parseAuthEnvironment({ BETTER_AUTH_URL: 'ftp://example.com' })).toThrow(
+      'Authentication configuration is invalid: BETTER_AUTH_URL.',
+    );
   });
 });

@@ -15,6 +15,13 @@
       "when": 1789429354378,
       "tag": "0001_bizarre_cardiac",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789455429961,
+      "tag": "0002_dark_thunderball",
+      "breakpoints": true
     }
   ]
 }

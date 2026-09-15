@@ -2,7 +2,11 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { Miniflare } from 'miniflare';
 
-const migrations = ['../../drizzle/0000_new_makkari.sql', '../../drizzle/0001_bizarre_cardiac.sql'];
+const migrations = [
+  '../../drizzle/0000_new_makkari.sql',
+  '../../drizzle/0001_bizarre_cardiac.sql',
+  '../../drizzle/0002_dark_thunderball.sql',
+];
 
 export async function createTestRuntime() {
   const runtime = new Miniflare({

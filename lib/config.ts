@@ -17,7 +17,33 @@ const providerEnvironmentSchema = z.object({
   WITHYOU_ALLOW_MOCK_PROVIDER: z.enum(['true', 'false']).default('false'),
 });
 
+const optionalUrl = z.preprocess(
+  (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+  z.string().trim().url().refine((value) => value.startsWith('http://') || value.startsWith('https://')).optional(),
+);
+
+const authEnvironmentSchema = z
+  .object({
+    BETTER_AUTH_SECRET: z.preprocess(
+      (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+      z.string().min(32).optional(),
+    ),
+    BETTER_AUTH_URL: optionalUrl,
+    GOOGLE_CLIENT_ID: optionalSecret,
+    GOOGLE_CLIENT_SECRET: optionalSecret,
+  })
+  .superRefine((value, context) => {
+    if (Boolean(value.GOOGLE_CLIENT_ID) !== Boolean(value.GOOGLE_CLIENT_SECRET)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['GOOGLE_CLIENT_ID'],
+        message: 'Google OAuth credentials must be configured together.',
+      });
+    }
+  });
+
 export type ProviderEnvironment = z.infer<typeof providerEnvironmentSchema>;
+export type AuthEnvironment = z.infer<typeof authEnvironmentSchema>;
 
 export function parseProviderEnvironment(input: Record<string, unknown>): ProviderEnvironment {
   const result = providerEnvironmentSchema.safeParse(input);
@@ -35,6 +61,17 @@ export function parseProviderEnvironment(input: Record<string, unknown>): Provid
     result.data.WITHYOU_ALLOW_MOCK_PROVIDER !== 'true'
   ) {
     throw new AppError('The mock voice provider must be explicitly enabled.', 503);
+  }
+  return result.data;
+}
+
+export function parseAuthEnvironment(input: Record<string, unknown>): AuthEnvironment {
+  const result = authEnvironmentSchema.safeParse(input);
+  if (!result.success) {
+    const fields = [...new Set(result.error.issues.map((issue) => issue.path.join('.')))]
+      .filter(Boolean)
+      .join(', ');
+    throw new AppError(`Authentication configuration is invalid${fields ? `: ${fields}` : ''}.`, 503);
   }
   return result.data;
 }
