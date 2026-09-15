@@ -26,6 +26,10 @@ const localBindingConfig = {
         },
       ]
     : [],
+  vars: {
+    WITHYOU_VOICE_PROVIDER: process.env.WITHYOU_VOICE_PROVIDER || 'cartesia',
+    WITHYOU_ALLOW_MOCK_PROVIDER: process.env.WITHYOU_ALLOW_MOCK_PROVIDER || 'false',
+  },
 };
 
 export default defineConfig(async () => {
@@ -50,6 +54,7 @@ export default defineConfig(async () => {
       cloudflare({
         viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
         inspectorPort: false,
+        persistState: { path: process.env.WITHYOU_PERSIST_PATH || '.wrangler/state' },
         config: localBindingConfig,
       }),
     ],

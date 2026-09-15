@@ -1,0 +1,68 @@
+import { devices, expect, test } from '@playwright/test';
+
+const wav = Buffer.from([
+  82, 73, 70, 70, 36, 0, 0, 0, 87, 65, 86, 69, 102, 109, 116, 32,
+  16, 0, 0, 0, 1, 0, 1, 0, 64, 31, 0, 0, 128, 62, 0, 0,
+  2, 0, 16, 0, 100, 97, 116, 97, 0, 0, 0, 0,
+]);
+
+test('user can preserve a voice and manage a generated keepsake', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByRole('heading', { name: 'Their voice. Still with you.' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Preserve a voice' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByLabel('Name').fill('E2E Demo Voice');
+  await page.getByLabel('Relationship').fill('Demo family member');
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'e2e-sample.wav',
+    mimeType: 'audio/wav',
+    buffer: wav,
+  });
+  await page.getByLabel('Permission to preserve and recreate this voice').check();
+  await page.getByRole('button', { name: 'Save voice & recording' }).click();
+  await expect(page.getByRole('status')).toContainText('Voice and original recording saved.');
+
+  await page.getByLabel('YOUR WORDS').fill('You are loved, always.');
+  await page.getByLabel('Feeling').selectOption('warm');
+  await page.getByRole('button', { name: 'Create audio' }).click();
+  await expect(page.getByRole('status')).toContainText('Your new keepsake is ready.');
+  const keepsakeHeading = page.getByRole('heading', { name: 'You are loved, always.' });
+  await expect(keepsakeHeading).toBeVisible();
+  await expect(page.getByText(/Warm.*1\.00.*pace.*1\.00.*volume/)).toBeVisible();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Download You are loved, always.' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^withyou-generated-.+\.wav$/);
+
+  await page.getByRole('button', { name: 'Adjust delivery for You are loved, always.' }).click();
+  await page.getByLabel('FEELING').selectOption('proud');
+  await page.getByRole('button', { name: 'Update audio' }).click();
+  await expect(page.getByRole('status')).toContainText('Keepsake updated.');
+  await expect(page.getByText(/Proud.*pace.*volume/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Delete You are loved, always.' }).click();
+  await expect(page.getByRole('heading', { name: 'Delete this keepsake?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Keepsake deleted.');
+  await expect(keepsakeHeading).toHaveCount(0);
+});
+
+test.describe('mobile layout', () => {
+  const pixel = devices['Pixel 7'];
+  test.use({
+    viewport: pixel.viewport,
+    userAgent: pixel.userAgent,
+    deviceScaleFactor: pixel.deviceScaleFactor,
+    isMobile: pixel.isMobile,
+    hasTouch: pixel.hasTouch,
+  });
+
+  test('exposes the primary controls', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: 'Preserve a voice' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Create a keepsake/ })).toBeVisible();
+  });
+});
