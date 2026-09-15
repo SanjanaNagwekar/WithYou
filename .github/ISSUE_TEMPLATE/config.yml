@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report
+    url: https://github.com/SanjanaNagwekar/WithYou/security/advisories/new
+    about: Report vulnerabilities privately instead of opening a public issue.
+

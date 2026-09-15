@@ -1,31 +1,75 @@
 # WithYou
 
-A private voice-keepsake MVP: preserve a reference recording, record new memories into a private recording bank, create a familiar voice through the configured speech provider, generate labeled AI audio, and play, download, or delete original and generated recordings. Generated keepsakes can be regenerated in place with new mood, pace, and volume settings.
+WithYou is a private voice-keepsake application. It preserves consented reference recordings, stores original memories, and creates clearly labeled synthetic keepsakes through a configurable speech provider. A keepsake can be replayed, downloaded, deleted, or regenerated in place with a different feeling, pace, and volume.
 
-## Run locally
+## Current capabilities
 
-Requires Node 22.13+. Run `npm ci`, then `npm run build`. Apply the local schema migrations:
+- Create a voice profile from an uploaded file or browser recording.
+- Keep multiple original recordings in a private recording bank.
+- Generate a WAV keepsake through Cartesia or a deterministic local mock.
+- Change delivery settings without creating a second keepsake record.
+- Enforce per-owner access, same-origin writes, daily generation limits, and per-voice generation locks.
+- Store metadata in Cloudflare D1 and private audio objects in Cloudflare R2.
+- Test validation, provider behavior, API/data boundaries, and the primary browser journey.
 
-```
+## Local setup
+
+Prerequisites: an even-numbered Node.js release supported by the toolchain (22.13+, 24, or 26+) and npm. Continuous integration uses Node.js 24.
+
+```bash
+npm ci
+cp .env.example .env
+npm run build
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_new_makkari.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_bizarre_cardiac.sql
+npm run dev
 ```
 
-Copy `.env.example` to `.env` and optionally supply `CARTESIA_API_KEY`. Run `npm run dev` and open the printed URL. Development uses a local-only simulated user. Production must supply trusted `x-withyou-user-id`, `x-withyou-user-email`, and optional `x-withyou-user-full-name` headers through an authentication layer; do not expose the application publicly until that layer is configured. Owner checks protect every library and audio operation. D1 stores metadata and R2 stores private audio.
+Open `http://localhost:5173`. Local development injects a simulated user only for loopback requests. Never use this mechanism as production authentication.
 
-## Cartesia setup
+To enable live voice generation, add `CARTESIA_API_KEY` to `.env`. The browser never receives this secret. Without it, original recordings can still be uploaded, played, downloaded, and deleted.
 
-Set `CARTESIA_API_KEY` as a secret in the Site environment and redeploy. `CARTESIA_MODEL_ID` defaults to `sonic-3.6`. Never put a provider key in client code. The reference clip is sent to Cartesia only on first generation, after permission was recorded when creating the profile. Generated audio is returned as WAV. Without a key, originals can still be uploaded, played, and downloaded.
+## Safe demo data
 
-Official API references:
-- https://docs.cartesia.ai/api-reference/voices/clone
-- https://docs.cartesia.ai/api-reference/tts/bytes
-- https://docs.cartesia.ai/build-with-cartesia/tts-models/latest
+The deterministic mock provider is limited to environments that explicitly opt in. Start a local server with both controls enabled, then seed it:
 
-## MVP limits
+```bash
+WITHYOU_VOICE_PROVIDER=mock WITHYOU_ALLOW_MOCK_PROVIDER=true npm run dev
+npm run seed
+```
 
-15 MB per source recording; MP3/WAV/M4A/WebM. Users can upload a file or record in the browser when creating or improving a voice, and can save multiple original recordings to each profile's recording bank. Browser recording requires microphone permission and stops automatically after 10 minutes. Generations and in-place keepsake updates are limited to 1,000 characters, 30 successful generations per user per day, and one in-flight generation per voice. Consent is an attestation, not identity or legal-authority verification. Files are checked by size and declared audio MIME type; no transcoding or audio quality analysis is included. Short, clean, single-speaker clips are best. Generation uses synchronous provider calls with a timeout; failed provider work may incur charges even when no keepsake is saved. There is no payment processing, family sharing, profile deletion, subscription logic, or background queue yet. This is a private pilot, not a paid public launch.
+The seed command is idempotent and refuses to run against Cartesia. Do not enable the mock provider in production.
+
+## Environment variables
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `CARTESIA_API_KEY` | For live generation | Server-side Cartesia credential. |
+| `CARTESIA_MODEL_ID` | No | Cartesia model; defaults to `sonic-3.6`. |
+| `WITHYOU_VOICE_PROVIDER` | No | `cartesia` by default; `mock` for controlled demos/tests. |
+| `WITHYOU_ALLOW_MOCK_PROVIDER` | For mock mode | Must be `true` before mock generation is allowed. |
+| `WITHYOU_BASE_URL` | Seed only | Seed target; defaults to `http://localhost:5173`. |
+| `WITHYOU_PERSIST_PATH` | Test tooling only | Overrides local Cloudflare state location. |
+
+Provider configuration is validated before the authenticated application renders. Invalid modes and unsafe mock configuration fail immediately. A missing Cartesia credential disables generation with an explicit server-side response while leaving original-recording features available.
 
 ## Verification
 
-Build and TypeScript checks pass. Locally verified upload persistence, browser recording with a synthetic microphone stream, recording-bank storage and playback, microphone-permission recovery, consent rejection, anonymous library/audio rejection, byte-identical playback/download, missing-provider errors, UI recording selection, and valid/invalid WebMCP phrase staging. Live provider cloning and generation require a configured API key.
+```bash
+npm run lint
+npm run typecheck
+npm run test:coverage
+npm run test:integration
+npm run test:e2e
+npm run build
+```
+
+`npm run validate` runs every non-browser check. Integration tests create isolated temporary D1 and R2 resources. End-to-end tests rebuild the application, reset a dedicated local state directory, start the mock provider, and run Chromium through the main user journey.
+
+## Production requirements
+
+Production must put a trusted authentication layer in front of WithYou that supplies `x-withyou-user-id`, `x-withyou-user-email`, and optionally `x-withyou-user-full-name`. Do not expose the application publicly until the upstream layer strips untrusted versions of these headers and supplies verified identity values.
+
+The current pilot has no payment processing, family sharing, account/profile deletion, subscription logic, background job queue, malware scanning, or legal-authority verification. It accepts MP3, WAV, M4A, and WebM reference files up to 15 MB; generations are limited to 1,000 characters and 30 successful generations per user per day.
+
+See [Architecture](docs/ARCHITECTURE.md), [Testing](docs/TESTING.md), [Contributing](CONTRIBUTING.md), and [Security](SECURITY.md) for more detail.

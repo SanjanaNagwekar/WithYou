@@ -1,0 +1,39 @@
+name: Feature request
+description: Propose an improvement to WithYou
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: User need
+      description: What problem should this solve, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe the experience or acceptance criteria without prescribing an implementation.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Voice and audio
+        - Library and storage
+        - Authentication and sharing
+        - Translation
+        - Billing
+        - Accessibility and interface
+        - Testing and infrastructure
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy, consent, or security considerations
+      description: Note any voice, identity, payment, or personal-data implications.
+
