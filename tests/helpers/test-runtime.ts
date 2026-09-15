@@ -6,6 +6,7 @@ const migrations = [
   '../../drizzle/0000_new_makkari.sql',
   '../../drizzle/0001_bizarre_cardiac.sql',
   '../../drizzle/0002_dark_thunderball.sql',
+  '../../drizzle/0003_auth_rate_limits.sql',
 ];
 
 export async function createTestRuntime() {

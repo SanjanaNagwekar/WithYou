@@ -49,6 +49,13 @@ export const verifications=sqliteTable('verification',{
  updatedAt:text('updatedAt').notNull(),
 },t=>[index('verification_identifier_idx').on(t.identifier)]);
 
+export const authRateLimits=sqliteTable('authRateLimit',{
+ id:text('id').primaryKey(),
+ key:text('key').notNull(),
+ count:integer('count').notNull(),
+ lastRequest:integer('lastRequest').notNull(),
+},t=>[uniqueIndex('auth_rate_limit_key_unique').on(t.key)]);
+
 export const voices=sqliteTable('voices',{id:text('id').primaryKey(),owner:text('owner').notNull(),name:text('name').notNull(),relationship:text('relationship').notNull(),voiceId:text('voice_id'),consentAt:text('consent_at').notNull(),createdAt:text('created_at').notNull()},t=>[index('idx_voices_owner').on(t.owner)]);
 export const recordings=sqliteTable('recordings',{id:text('id').primaryKey(),owner:text('owner').notNull(),voiceId:text('voice_id').notNull(),name:text('name').notNull(),kind:text('kind').notNull(),key:text('object_key').notNull(),mime:text('mime').notNull(),transcript:text('transcript').notNull().default(''),mood:text('mood').notNull().default('natural'),pace:real('pace').notNull().default(1),volume:real('volume').notNull().default(1),updatedAt:text('updated_at').notNull().default(''),createdAt:text('created_at').notNull()},t=>[index('idx_recordings_owner_voice').on(t.owner,t.voiceId)]);
 export const locks=sqliteTable('generation_locks',{voiceId:text('voice_id').primaryKey(),expires:integer('expires').notNull()});

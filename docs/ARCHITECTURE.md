@@ -25,11 +25,14 @@ VoiceProvider interface
 ## Boundaries and responsibilities
 
 - `app/studio.tsx` owns the interactive client experience and calls server routes.
-- `app/sign-in/**` and `components/auth-form.tsx` own account creation and sign-in UI.
+- `app/sign-in/**`, `app/reset-password/**`, and the authentication form components own account creation, sign-in, verification, and recovery UI.
+- `app/account/**` and `components/account-settings.tsx` own profile, password, session, and account-deletion controls.
 - `app/api/auth/**` exposes the email/password and Google OAuth endpoints.
 - `app/api/**` implements library, audio, voice-sample, recording-bank, generation, update, and delete operations.
 - `app/auth.ts` resolves server-validated Better Auth sessions and maps them to app owners.
-- `lib/auth.ts` configures Better Auth against the existing D1 binding.
+- `lib/auth.ts` configures Better Auth against D1, including Google OAuth, email lifecycle hooks, session policy, token encryption, and rate limits.
+- `lib/account.ts` reads linked identity methods and removes all owner-scoped metadata and R2 objects during account deletion.
+- `lib/email.ts` sends verification and recovery messages without exposing the email provider credential to the browser.
 - `lib/server.ts` enforces authentication, same-origin writes, and storage availability.
 - `lib/validation.ts` contains reusable input and business-rule validation.
 - `lib/voice-generation.ts` coordinates cloning/generation, locks, quotas, D1 writes, and R2 objects.
@@ -38,7 +41,8 @@ VoiceProvider interface
 
 ## Data model
 
-- `user`, `session`, `account`, and `verification`: account identities, credentials/OAuth links, and expiring sessions.
+- `user`, `session`, `account`, and `verification`: account identities, password hashes/OAuth links, and expiring sessions or one-time challenges.
+- `authRateLimit`: database-backed request counters for authentication abuse protection.
 - `voices`: owner-scoped profiles, consent timestamp, and optional provider voice ID.
 - `recordings`: owner-scoped original or generated audio metadata and delivery settings.
 - `generation_locks`: short-lived, per-voice concurrency protection.
@@ -48,7 +52,7 @@ Audio bytes are never stored in D1. Each recording points to a private R2 object
 
 ## Trust and privacy model
 
-Email/password credentials are hashed by the authentication library and never stored in plaintext. Session tokens are sent in HTTP-only cookies and resolved on the server before app data is queried. Google OAuth is enabled only when both provider credentials are present. Production also requires a high-entropy authentication secret and an explicit public base URL.
+Email/password credentials use the authentication library's password hashing and are never stored in plaintext. Google access, refresh, and ID tokens are encrypted at rest with AES-256-GCM; a migration removes legacy plaintext provider tokens. Verification identifiers are hashed. Sessions expire after seven days, refresh at most daily, and use HTTP-only, same-site cookies that become secure-only in production. Sensitive operations require a session created within the last 15 minutes unless the user confirms their password. Google OAuth is enabled only when both provider credentials are present. Production also requires a high-entropy authentication secret and an explicit public base URL.
 
 Reference recordings and requested text are sent to the configured speech provider when generating. Provider credentials stay server-side. Mock mode requires a second explicit opt-in so an accidental environment-value change cannot silently enable it.
 
@@ -64,4 +68,4 @@ Reference recordings and requested text are sent to the configured speech provid
 
 ## Near-term extension points
 
-Email verification and account recovery should extend the authentication service. Translation, billing, asynchronous generation, provider benchmarking, and observability should enter through explicit adapters/services. Keep route handlers thin and preserve the current owner, validation, and provider boundaries when adding them.
+Translation, billing, asynchronous generation, provider benchmarking, and observability should enter through explicit adapters/services. Keep route handlers thin and preserve the current owner, validation, and provider boundaries when adding them.

@@ -6,7 +6,9 @@ WithYou is a private voice-keepsake application. It preserves consented referenc
 
 - Create a voice profile from an uploaded file or browser recording.
 - Create an account with email and password, sign in with a secure session, and sign out.
-- Enable Google sign-in with optional OAuth credentials.
+- Sign in with Google and safely link a verified Google identity to the same account.
+- Update a profile, change a password, revoke other sessions, and delete an account with all owned data.
+- Enable email verification and password recovery through optional server-side email delivery.
 - Keep multiple original recordings in a private recording bank.
 - Generate a WAV keepsake through Cartesia or a deterministic local mock.
 - Change delivery settings without creating a second keepsake record.
@@ -25,6 +27,7 @@ npm run build
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_new_makkari.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_bizarre_cardiac.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_dark_thunderball.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_auth_rate_limits.sql
 npm run dev
 ```
 
@@ -55,6 +58,8 @@ The seed command is idempotent and refuses to run against Cartesia. Do not enabl
 | `BETTER_AUTH_URL` | Production | Public application origin, such as `https://withyou.example`. |
 | `GOOGLE_CLIENT_ID` | For Google sign-in | Google OAuth web client ID. Must be set with its client secret. |
 | `GOOGLE_CLIENT_SECRET` | For Google sign-in | Google OAuth web client secret. Must be set with its client ID. |
+| `RESEND_API_KEY` | For verification/recovery email | Server-side Resend credential. Must be set with the sender address. |
+| `AUTH_EMAIL_FROM` | For verification/recovery email | Verified sender email address used for account messages. |
 | `WITHYOU_BASE_URL` | Seed only | Seed target; defaults to `http://localhost:5173`. |
 | `WITHYOU_PERSIST_PATH` | Test tooling only | Overrides local Cloudflare state location. |
 
@@ -75,8 +80,8 @@ npm run build
 
 ## Production requirements
 
-Production uses D1-backed accounts and server-validated session cookies. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` before deployment. To enable Google sign-in, create a Google OAuth web client and register `https://YOUR_DOMAIN/api/auth/callback/google` as an authorized redirect URI, then configure both Google variables.
+Production uses D1-backed accounts, encrypted OAuth tokens, hashed verification identifiers, database-backed authentication rate limits, and secure HTTP-only session cookies. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` before deployment. To enable Google sign-in, create a separate production Google OAuth web client and register `https://YOUR_DOMAIN/api/auth/callback/google` as an authorized redirect URI, then configure both Google variables. To require email verification and expose password recovery, configure both email delivery variables with a verified sender.
 
-The current pilot has no email verification or password-reset delivery, payment processing, family sharing, account/profile deletion, subscription logic, background job queue, malware scanning, or legal-authority verification. It accepts MP3, WAV, M4A, and WebM reference files up to 15 MB; generations are limited to 1,000 characters and 30 successful generations per user per day.
+The current pilot has no payment processing, family sharing, subscription logic, background job queue, malware scanning, or legal-authority verification. It accepts MP3, WAV, M4A, and WebM reference files up to 15 MB; generations are limited to 1,000 characters and 30 successful generations per user per day.
 
 See [Architecture](docs/ARCHITECTURE.md), [Testing](docs/TESTING.md), [Contributing](CONTRIBUTING.md), and [Security](SECURITY.md) for more detail.

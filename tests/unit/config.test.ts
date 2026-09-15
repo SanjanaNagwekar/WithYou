@@ -82,6 +82,21 @@ describe('parseAuthEnvironment', () => {
     );
   });
 
+  it('accepts complete email delivery credentials and rejects partial configuration', () => {
+    expect(
+      parseAuthEnvironment({
+        RESEND_API_KEY: 'resend-test-key',
+        AUTH_EMAIL_FROM: 'accounts@withyou.example',
+      }),
+    ).toEqual({
+      RESEND_API_KEY: 'resend-test-key',
+      AUTH_EMAIL_FROM: 'accounts@withyou.example',
+    });
+    expect(() => parseAuthEnvironment({ RESEND_API_KEY: 'resend-test-key' })).toThrow(
+      'Authentication configuration is invalid: RESEND_API_KEY.',
+    );
+  });
+
   it('rejects short secrets and unsafe URL schemes', () => {
     expect(() => parseAuthEnvironment({ BETTER_AUTH_SECRET: 'short' })).toThrow(
       'Authentication configuration is invalid: BETTER_AUTH_SECRET.',

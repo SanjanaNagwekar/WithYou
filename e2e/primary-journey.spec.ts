@@ -62,6 +62,22 @@ test('user can preserve a voice and manage a generated keepsake', async ({ page 
   await expect(keepsakeHeading).toHaveCount(0);
 });
 
+test('user can update profile and secure other sessions', async ({ page }) => {
+  await page.getByRole('link', { name: 'Account settings' }).click();
+  await expect(page).toHaveURL('/account');
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await page.getByLabel('DISPLAY NAME').fill('Updated E2E User');
+  await page.getByRole('button', { name: 'Save profile' }).click();
+  await expect(page.getByRole('status')).toContainText('Profile updated.');
+
+  await page.getByRole('button', { name: 'Sign out other devices' }).click();
+  await expect(page.getByRole('status')).toContainText('Other devices have been signed out.');
+
+  await page.getByRole('link', { name: 'Back to library' }).click();
+  await expect(page).toHaveURL('/');
+  await expect(page.getByText('Updated E2E User')).toBeVisible();
+});
+
 test.describe('mobile layout', () => {
   const pixel = devices['Pixel 7'];
   test.use({

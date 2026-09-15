@@ -31,6 +31,11 @@ const authEnvironmentSchema = z
     BETTER_AUTH_URL: optionalUrl,
     GOOGLE_CLIENT_ID: optionalSecret,
     GOOGLE_CLIENT_SECRET: optionalSecret,
+    RESEND_API_KEY: optionalSecret,
+    AUTH_EMAIL_FROM: z.preprocess(
+      (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+      z.string().trim().email().optional(),
+    ),
   })
   .superRefine((value, context) => {
     if (Boolean(value.GOOGLE_CLIENT_ID) !== Boolean(value.GOOGLE_CLIENT_SECRET)) {
@@ -38,6 +43,13 @@ const authEnvironmentSchema = z
         code: z.ZodIssueCode.custom,
         path: ['GOOGLE_CLIENT_ID'],
         message: 'Google OAuth credentials must be configured together.',
+      });
+    }
+    if (Boolean(value.RESEND_API_KEY) !== Boolean(value.AUTH_EMAIL_FROM)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['RESEND_API_KEY'],
+        message: 'Email delivery credentials must be configured together.',
       });
     }
   });

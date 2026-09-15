@@ -12,6 +12,7 @@ import {
   Plus,
   RefreshCw,
   SlidersHorizontal,
+  UserRound,
   WandSparkles,
 } from 'lucide-react';
 import { AudioSource, type AudioSourceMode } from '@/components/audio-source';
@@ -329,6 +330,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
         <a className="brand" href="/"><AudioLines /> WithYou<span>VOICE KEEPSAKES</span></a>
         <div className="account-summary">
           <span><LockKeyhole size={14} /><span><strong>{user.displayName}</strong><small>{user.email}</small></span></span>
+          <a href="/account" aria-label="Account settings"><UserRound size={15} /></a>
           <button type="button" onClick={() => void signOut()} aria-label="Sign out"><LogOut size={15} /></button>
         </div>
       </header>
