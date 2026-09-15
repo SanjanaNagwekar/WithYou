@@ -1,16 +1,5 @@
 import { AppError, context, failure } from '@/lib/server';
-
-const allowedAudioTypes = new Set([
-  'audio/aac',
-  'audio/m4a',
-  'audio/mp4',
-  'audio/mpeg',
-  'audio/ogg',
-  'audio/wav',
-  'audio/webm',
-  'audio/x-m4a',
-  'audio/x-wav',
-]);
+import { assertRequestSize, isValidAudioFile, normalizedAudioMime } from '@/lib/validation';
 
 export async function POST(
   request: Request,
@@ -18,9 +7,7 @@ export async function POST(
 ) {
   try {
     const { db, owner, bucket } = await context(request, true);
-    if (Number(request.headers.get('content-length')) > 16 * 1024 * 1024) {
-      throw new AppError('Please keep the recording under 15 MB.');
-    }
+    assertRequestSize(request.headers.get('content-length'), 'Please keep the recording under 15 MB.');
 
     const { id } = await params;
     const voice = await db
@@ -39,15 +26,10 @@ export async function POST(
       throw new AppError('Confirm your permission to save this recording.');
     }
 
-    const mime = audio instanceof File ? audio.type.split(';')[0].toLowerCase() : '';
-    if (
-      !(audio instanceof File) ||
-      !audio.size ||
-      audio.size > 15 * 1024 * 1024 ||
-      !allowedAudioTypes.has(mime)
-    ) {
+    if (!isValidAudioFile(audio)) {
       throw new AppError('Record audio or choose an audio file under 15 MB.');
     }
+    const mime = normalizedAudioMime(audio);
 
     const recordingId = crypto.randomUUID();
     const objectKey = `${owner}/${recordingId}`;

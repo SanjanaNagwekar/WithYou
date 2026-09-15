@@ -1,4 +1,5 @@
-import { AppError, context, failure, providerConfig } from '@/lib/server';
+import { AppError, context, failure } from '@/lib/server';
+import { isVoiceProviderConfigured } from '@/lib/providers';
 import {
   acquireGenerationLock,
   enforceGenerationLimit,
@@ -53,7 +54,7 @@ export async function PATCH(
 
   try {
     const { db, owner, bucket } = await context(request, true);
-    if (!providerConfig().key) {
+    if (!isVoiceProviderConfigured()) {
       throw new AppError('Voice generation is not available yet.', 503);
     }
 

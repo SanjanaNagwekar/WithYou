@@ -1,80 +1,14 @@
-import { AppError, cartesia, providerConfig } from '@/lib/server';
-
-export const moodOptions = ['natural', 'warm', 'calm', 'joyful', 'nostalgic', 'proud'] as const;
-
-export type Mood = (typeof moodOptions)[number];
-
-const providerEmotion: Record<Mood, string | undefined> = {
-  natural: undefined,
-  warm: 'affectionate',
-  calm: 'calm',
-  joyful: 'happy',
-  nostalgic: 'nostalgic',
-  proud: 'proud',
-};
-
-export type DeliverySettings = {
-  mood: Mood;
-  pace: number;
-  volume: number;
-};
-
-export function parseDelivery(value: {
-  mood?: unknown;
-  pace?: unknown;
-  volume?: unknown;
-}): DeliverySettings {
-  if (
-    typeof value.mood !== 'string' ||
-    !moodOptions.includes(value.mood as Mood) ||
-    typeof value.pace !== 'number' ||
-    !Number.isFinite(value.pace) ||
-    value.pace < 0.6 ||
-    value.pace > 1.5 ||
-    typeof value.volume !== 'number' ||
-    !Number.isFinite(value.volume) ||
-    value.volume < 0.5 ||
-    value.volume > 2
-  ) {
-    throw new AppError('Choose valid voice delivery settings.');
-  }
-
-  return {
-    mood: value.mood as Mood,
-    pace: value.pace,
-    volume: value.volume,
-  };
-}
+import { AppError } from '@/lib/errors';
+import { getVoiceProvider } from '@/lib/providers';
+export { parseDelivery } from '@/lib/validation';
+import type { DeliverySettings } from '@/lib/validation';
 
 export async function synthesizeKeepsake(
   transcript: string,
   providerVoiceId: string,
   delivery: DeliverySettings,
 ) {
-  const emotion = providerEmotion[delivery.mood];
-  const generationConfig = {
-    speed: delivery.pace,
-    volume: delivery.volume,
-    ...(emotion ? { emotion } : {}),
-  };
-  const audio = await cartesia('/tts/bytes', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model_id: providerConfig().model,
-      transcript,
-      voice: { mode: 'id', id: providerVoiceId },
-      language: 'en',
-      generation_config: generationConfig,
-      output_format: {
-        container: 'wav',
-        encoding: 'pcm_s16le',
-        sample_rate: 44100,
-      },
-    }),
-  });
-
-  return audio.arrayBuffer();
+  return getVoiceProvider().synthesize(transcript, providerVoiceId, delivery);
 }
 
 export async function acquireGenerationLock(db: D1Database, voiceId: string) {

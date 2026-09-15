@@ -1,8 +1,9 @@
-import { AppError, cartesia, context, failure, providerConfig } from '@/lib/server';
+import { AppError, context, failure } from '@/lib/server';
+import { getVoiceProvider, isVoiceProviderConfigured } from '@/lib/providers';
+import { parseKeepsakeRequest } from '@/lib/validation';
 import {
   acquireGenerationLock,
   enforceGenerationLimit,
-  parseDelivery,
   synthesizeKeepsake,
 } from '@/lib/voice-generation';
 
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
 
   try {
     const { db, owner, bucket } = await context(request, true);
-    if (!providerConfig().key) {
+    if (!isVoiceProviderConfigured()) {
       throw new AppError('Voice generation is not available yet.', 503);
     }
 
@@ -22,20 +23,11 @@ export async function POST(request: Request) {
       pace?: unknown;
       volume?: unknown;
     };
-    if (
-      typeof body.text !== 'string' ||
-      !body.text.trim() ||
-      body.text.length > 1000 ||
-      typeof body.voiceId !== 'string'
-    ) {
-      throw new AppError('Select a voice and enter between 1 and 1,000 characters.');
-    }
-    const transcript = body.text.trim();
-    const delivery = parseDelivery(body);
+    const { transcript, voiceId, delivery } = parseKeepsakeRequest(body);
 
     const voice = await db
       .prepare('SELECT id,name,voice_id FROM voices WHERE id=? AND owner=?')
-      .bind(body.voiceId, owner)
+      .bind(voiceId, owner)
       .first<{ id: string; name: string; voice_id: string | null }>();
     if (!voice) throw new AppError('Voice not found.', 404);
 
@@ -55,22 +47,12 @@ export async function POST(request: Request) {
 
       const source = await bucket.get(recording.object_key);
       if (!source) throw new AppError('Reference recording unavailable.');
-      const form = new FormData();
-      form.set(
-        'clip',
-        new Blob([await source.arrayBuffer()], { type: recording.mime }),
-        recording.name,
-      );
-      form.set('name', voice.name);
-      form.set('language', 'en');
-      form.set('access', 'private');
-      form.set('description', 'Private WithYou voice keepsake');
-      const clone = (await (
-        await cartesia('/voices/clone', { method: 'POST', body: form })
-      ).json()) as { id?: string };
-      if (!clone.id) throw new AppError('The voice service returned an invalid voice.', 502);
-
-      voice.voice_id = clone.id;
+      voice.voice_id = await getVoiceProvider().cloneVoice({
+        audio: await source.arrayBuffer(),
+        mime: recording.mime,
+        fileName: recording.name,
+        name: voice.name,
+      });
       await db
         .prepare('UPDATE voices SET voice_id=? WHERE id=? AND owner=?')
         .bind(voice.voice_id, voice.id, owner)
