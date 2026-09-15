@@ -1,5 +1,5 @@
 import { AppError, context, failure } from '@/lib/server';
-import { isVoiceProviderConfigured } from '@/lib/providers';
+import { isVoiceProviderConfigured, voiceProviderMode } from '@/lib/providers';
 import { assertRequestSize, isValidAudioFile, normalizedAudioMime } from '@/lib/validation';
 
 export async function GET(request: Request) {
@@ -10,7 +10,12 @@ export async function GET(request: Request) {
       db.prepare('SELECT id,name,kind,transcript,voice_id,mood,pace,volume,updated_at,created_at FROM recordings WHERE owner=? ORDER BY created_at DESC').bind(owner).all(),
     ]);
     return Response.json(
-      { voices: voices.results, recordings: recordings.results, configured: isVoiceProviderConfigured() },
+      {
+        voices: voices.results,
+        recordings: recordings.results,
+        configured: isVoiceProviderConfigured(),
+        providerMode: voiceProviderMode(),
+      },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch (error) {

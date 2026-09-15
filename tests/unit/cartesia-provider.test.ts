@@ -5,6 +5,8 @@ import { CartesiaVoiceProvider } from '@/lib/providers/cartesia';
 const config = {
   CARTESIA_API_KEY: 'test-key',
   CARTESIA_MODEL_ID: 'sonic-3.6',
+  WITHYOU_VOICE_PROVIDER: 'cartesia' as const,
+  WITHYOU_ALLOW_MOCK_PROVIDER: 'false' as const,
 };
 
 describe('CartesiaVoiceProvider', () => {

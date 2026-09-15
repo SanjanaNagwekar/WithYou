@@ -13,6 +13,8 @@ const providerEnvironmentSchema = z.object({
     .trim()
     .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/)
     .default('sonic-3.6'),
+  WITHYOU_VOICE_PROVIDER: z.enum(['cartesia', 'mock']).default('cartesia'),
+  WITHYOU_ALLOW_MOCK_PROVIDER: z.enum(['true', 'false']).default('false'),
 });
 
 export type ProviderEnvironment = z.infer<typeof providerEnvironmentSchema>;
@@ -27,6 +29,12 @@ export function parseProviderEnvironment(input: Record<string, unknown>): Provid
       `Voice provider configuration is invalid${fields ? `: ${fields}` : ''}.`,
       503,
     );
+  }
+  if (
+    result.data.WITHYOU_VOICE_PROVIDER === 'mock' &&
+    result.data.WITHYOU_ALLOW_MOCK_PROVIDER !== 'true'
+  ) {
+    throw new AppError('The mock voice provider must be explicitly enabled.', 503);
   }
   return result.data;
 }
