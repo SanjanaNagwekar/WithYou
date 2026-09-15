@@ -1,5 +1,7 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { env } from 'cloudflare:workers';
+import { getAuth } from '@/lib/auth';
 
 export type AuthenticatedUser = {
   userId: string;
@@ -8,22 +10,21 @@ export type AuthenticatedUser = {
   fullName: string | null;
 };
 
-const USER_ID_HEADER = 'x-withyou-user-id';
-const USER_EMAIL_HEADER = 'x-withyou-user-email';
-const USER_FULL_NAME_HEADER = 'x-withyou-user-full-name';
+const LEGACY_LOCAL_OWNER = 'local_withyou';
+let localDataClaimed = false;
 
 export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> {
   const requestHeaders = await headers();
-  const userId = requestHeaders.get(USER_ID_HEADER);
-  const email = requestHeaders.get(USER_EMAIL_HEADER);
-  if (!userId || !email) return null;
+  const session = await getAuth().api.getSession({ headers: requestHeaders });
+  if (!session) return null;
 
-  const fullName = requestHeaders.get(USER_FULL_NAME_HEADER);
+  await claimLegacyLocalData(session.user.id);
+  const fullName = session.user.name?.trim() || null;
   return {
-    userId,
-    email,
+    userId: session.user.id,
+    email: session.user.email,
     fullName,
-    displayName: fullName || email,
+    displayName: fullName || session.user.email,
   };
 }
 
@@ -36,7 +37,7 @@ export async function requireAuthenticatedUser(
   redirect(`/sign-in?return_to=${encodeURIComponent(safeReturnPath(returnTo))}`);
 }
 
-function safeReturnPath(value: string): string {
+export function safeReturnPath(value: string): string {
   if (!value.startsWith('/') || value.startsWith('//')) return '/';
   try {
     const url = new URL(value, 'https://withyou.local');
@@ -45,4 +46,17 @@ function safeReturnPath(value: string): string {
   } catch {
     return '/';
   }
+}
+
+async function claimLegacyLocalData(userId: string) {
+  if (localDataClaimed || process.env.NODE_ENV === 'production' || !env.DB) return;
+  await env.DB.batch([
+    env.DB.prepare('UPDATE voices SET owner = ? WHERE owner = ?').bind(userId, LEGACY_LOCAL_OWNER),
+    env.DB.prepare('UPDATE recordings SET owner = ? WHERE owner = ?').bind(userId, LEGACY_LOCAL_OWNER),
+    env.DB.prepare('UPDATE generation_events SET owner = ? WHERE owner = ?').bind(
+      userId,
+      LEGACY_LOCAL_OWNER,
+    ),
+  ]);
+  localDataClaimed = true;
 }

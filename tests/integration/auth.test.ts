@@ -18,6 +18,8 @@ describe('authentication API', () => {
       DB: testRuntime.db,
       BETTER_AUTH_SECRET: 'integration-test-secret-with-at-least-32-characters',
       BETTER_AUTH_URL: 'http://localhost',
+      GOOGLE_CLIENT_ID: 'test-google-client-id',
+      GOOGLE_CLIENT_SECRET: 'test-google-client-secret',
     });
   });
 
@@ -61,5 +63,20 @@ describe('authentication API', () => {
     );
     expect(signIn.status).toBe(200);
     expect(signIn.headers.get('set-cookie')).toContain('better-auth.session_token');
+  });
+
+  it('starts the Google OAuth flow when provider credentials are configured', async () => {
+    const response = await authPost(
+      new Request('http://localhost/api/auth/sign-in/social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: 'google', callbackURL: '/' }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { redirect: boolean; url: string };
+    expect(body.redirect).toBe(true);
+    expect(new URL(body.url).origin).toBe('https://accounts.google.com');
   });
 });

@@ -25,6 +25,7 @@ export default defineConfig({
       WITHYOU_VOICE_PROVIDER: 'mock',
       WITHYOU_ALLOW_MOCK_PROVIDER: 'true',
       WITHYOU_PERSIST_PATH: '.wrangler/e2e-state',
+      BETTER_AUTH_URL: baseURL,
     },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

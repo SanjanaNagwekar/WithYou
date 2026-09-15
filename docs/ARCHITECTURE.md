@@ -6,10 +6,10 @@ WithYou is a TypeScript web application built with React, the Next.js App Router
 
 ```text
 Browser
-  |  React UI, uploads, playback, delivery controls
+  |  account UI, session cookie, uploads, playback, delivery controls
   v
 Route handlers
-  |  identity, origin, validation, ownership, rate limits
+  |  session identity, origin, validation, ownership, rate limits
   +--------------------+
   |                    |
   v                    v
@@ -25,8 +25,11 @@ VoiceProvider interface
 ## Boundaries and responsibilities
 
 - `app/studio.tsx` owns the interactive client experience and calls server routes.
+- `app/sign-in/**` and `components/auth-form.tsx` own account creation and sign-in UI.
+- `app/api/auth/**` exposes the email/password and Google OAuth endpoints.
 - `app/api/**` implements library, audio, voice-sample, recording-bank, generation, update, and delete operations.
-- `app/auth.ts` reads identity headers supplied by a trusted upstream authentication layer.
+- `app/auth.ts` resolves server-validated Better Auth sessions and maps them to app owners.
+- `lib/auth.ts` configures Better Auth against the existing D1 binding.
 - `lib/server.ts` enforces authentication, same-origin writes, and storage availability.
 - `lib/validation.ts` contains reusable input and business-rule validation.
 - `lib/voice-generation.ts` coordinates cloning/generation, locks, quotas, D1 writes, and R2 objects.
@@ -35,6 +38,7 @@ VoiceProvider interface
 
 ## Data model
 
+- `user`, `session`, `account`, and `verification`: account identities, credentials/OAuth links, and expiring sessions.
 - `voices`: owner-scoped profiles, consent timestamp, and optional provider voice ID.
 - `recordings`: owner-scoped original or generated audio metadata and delivery settings.
 - `generation_locks`: short-lived, per-voice concurrency protection.
@@ -44,13 +48,13 @@ Audio bytes are never stored in D1. Each recording points to a private R2 object
 
 ## Trust and privacy model
 
-The application does not currently authenticate users itself. In production, an upstream authentication layer must remove client-supplied identity headers and inject verified values. Local development injects one fixed identity only for loopback traffic.
+Email/password credentials are hashed by the authentication library and never stored in plaintext. Session tokens are sent in HTTP-only cookies and resolved on the server before app data is queried. Google OAuth is enabled only when both provider credentials are present. Production also requires a high-entropy authentication secret and an explicit public base URL.
 
 Reference recordings and requested text are sent to the configured speech provider when generating. Provider credentials stay server-side. Mock mode requires a second explicit opt-in so an accidental environment-value change cannot silently enable it.
 
 ## Request lifecycle
 
-1. The server resolves the verified owner and rejects unauthenticated access.
+1. The server validates the session cookie, resolves the account owner, and rejects unauthenticated access.
 2. Write routes reject cross-origin browser requests.
 3. Shared validators constrain text, files, consent, and delivery settings.
 4. Database queries include the owner boundary.
@@ -60,5 +64,4 @@ Reference recordings and requested text are sent to the configured speech provid
 
 ## Near-term extension points
 
-Authentication, translation, billing, asynchronous generation, provider benchmarking, and observability should enter through explicit adapters/services. Keep route handlers thin and preserve the current owner, validation, and provider boundaries when adding them.
-
+Email verification and account recovery should extend the authentication service. Translation, billing, asynchronous generation, provider benchmarking, and observability should enter through explicit adapters/services. Keep route handlers thin and preserve the current owner, validation, and provider boundaries when adding them.

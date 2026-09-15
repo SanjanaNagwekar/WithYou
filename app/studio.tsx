@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ArrowUpRight,
   AudioLines,
   Heart,
   LockKeyhole,
+  LogOut,
   Mic,
   Plus,
   RefreshCw,
@@ -25,6 +27,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VoiceRecorder } from '@/components/voice-recorder';
+import { authClient } from '@/lib/auth-client';
 
 type Voice = { id: string; name: string; relationship: string; voice_id: string | null };
 type LibraryResponse = {
@@ -51,7 +54,8 @@ function messageFrom(error: unknown) {
   return error instanceof Error ? error.message : 'We could not complete that request.';
 }
 
-export default function Home() {
+export default function Home({ user }: { user: { displayName: string; email: string } }) {
+  const router = useRouter();
   const [voices, setVoices] = useState<Voice[]>([]);
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [selected, setSelected] = useState('');
@@ -311,13 +315,22 @@ export default function Home() {
     await refresh();
   }
 
+  async function signOut() {
+    await authClient.signOut();
+    router.replace('/sign-in');
+    router.refresh();
+  }
+
   return (
     <div className="shell">
       <header>
         {/* vinext's development Link shim can load a second React copy after hot reload. */}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a className="brand" href="/"><AudioLines /> WithYou<span>VOICE KEEPSAKES</span></a>
-        <div className="private"><LockKeyhole size={14} /> Your private space</div>
+        <div className="account-summary">
+          <span><LockKeyhole size={14} /><span><strong>{user.displayName}</strong><small>{user.email}</small></span></span>
+          <button type="button" onClick={() => void signOut()} aria-label="Sign out"><LogOut size={15} /></button>
+        </div>
       </header>
       <main>
         <section className="intro">

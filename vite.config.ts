@@ -1,7 +1,6 @@
 import vinext from 'vinext';
 import { defineConfig } from 'vite';
 import deploymentConfig from './deployment.json' with { type: 'json' };
-import { localAuth } from './build/local-auth.ts';
 
 const LOCAL_DATABASE_ID = '00000000-0000-4000-8000-000000000000';
 const { d1, r2 } = deploymentConfig;
@@ -54,7 +53,6 @@ export default defineConfig(async () => {
     },
     plugins: [
       vinext(),
-      localAuth(),
       cloudflare({
         viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
         inspectorPort: false,

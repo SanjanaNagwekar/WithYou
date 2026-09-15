@@ -7,13 +7,13 @@
 | Static analysis | `npm run lint` | ESLint rules and common implementation mistakes. |
 | Type safety | `npm run typecheck` | TypeScript without emitting build files. |
 | Unit | `npm run test:coverage` | Validation, environment configuration, and provider behavior. |
-| API integration | `npm run test:integration` | Real route handlers against temporary isolated D1 and R2 resources. |
-| Browser | `npm run test:e2e` | Desktop primary journey and mobile control smoke test in Chromium. |
+| API integration | `npm run test:integration` | Real auth/app route handlers against temporary isolated D1 and R2 resources. |
+| Browser | `npm run test:e2e` | Account creation, desktop primary journey, and mobile control smoke test in Chromium. |
 | Production build | `npm run build` | Complete Vinext build and route compilation. |
 
 ## Isolation
 
-Unit tests do not require network services. API integration tests create a new Miniflare runtime and temporary state directory for each test, apply the checked-in migrations, and destroy the runtime afterward.
+Unit tests do not require network services. API integration tests create Miniflare runtimes with temporary D1 and R2 resources, apply the checked-in migrations, and destroy the runtimes afterward. Authentication coverage verifies password account creation, session cookies, repeat sign-in, and Google OAuth authorization URL creation without contacting Google.
 
 End-to-end preparation deletes only `.wrangler/e2e-state`, rebuilds the application, and reapplies migrations. Playwright starts the server with the deterministic mock voice provider. It never calls Cartesia and never reads a live provider key.
 
@@ -30,4 +30,3 @@ The normal local state in `.wrangler/state` is separate and is not reset by auto
 ## Continuous integration
 
 The CI workflow runs quality and browser jobs on pushes to `main` and on pull requests. Failed browser runs retain a Playwright report for seven days. Dependency review rejects newly introduced dependencies with moderate-or-higher known vulnerabilities, and CodeQL scans JavaScript/TypeScript changes.
-

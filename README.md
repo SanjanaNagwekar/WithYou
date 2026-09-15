@@ -5,6 +5,8 @@ WithYou is a private voice-keepsake application. It preserves consented referenc
 ## Current capabilities
 
 - Create a voice profile from an uploaded file or browser recording.
+- Create an account with email and password, sign in with a secure session, and sign out.
+- Enable Google sign-in with optional OAuth credentials.
 - Keep multiple original recordings in a private recording bank.
 - Generate a WAV keepsake through Cartesia or a deterministic local mock.
 - Change delivery settings without creating a second keepsake record.
@@ -22,10 +24,11 @@ cp .env.example .env
 npm run build
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_new_makkari.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_bizarre_cardiac.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_dark_thunderball.sql
 npm run dev
 ```
 
-Open `http://localhost:5173`. Local development injects a simulated user only for loopback requests. Never use this mechanism as production authentication.
+Open `http://localhost:5173`, create an account, and sign in. Development uses an explicitly local-only session secret when `BETTER_AUTH_SECRET` is empty; production refuses to start without a configured secret and base URL. The first local account automatically takes ownership of data created by the earlier local prototype so existing recordings are not lost.
 
 To enable live voice generation, add `CARTESIA_API_KEY` to `.env`. The browser never receives this secret. Without it, original recordings can still be uploaded, played, downloaded, and deleted.
 
@@ -48,6 +51,10 @@ The seed command is idempotent and refuses to run against Cartesia. Do not enabl
 | `CARTESIA_MODEL_ID` | No | Cartesia model; defaults to `sonic-3.6`. |
 | `WITHYOU_VOICE_PROVIDER` | No | `cartesia` by default; `mock` for controlled demos/tests. |
 | `WITHYOU_ALLOW_MOCK_PROVIDER` | For mock mode | Must be `true` before mock generation is allowed. |
+| `BETTER_AUTH_SECRET` | Production | High-entropy secret of at least 32 characters used to protect sessions. |
+| `BETTER_AUTH_URL` | Production | Public application origin, such as `https://withyou.example`. |
+| `GOOGLE_CLIENT_ID` | For Google sign-in | Google OAuth web client ID. Must be set with its client secret. |
+| `GOOGLE_CLIENT_SECRET` | For Google sign-in | Google OAuth web client secret. Must be set with its client ID. |
 | `WITHYOU_BASE_URL` | Seed only | Seed target; defaults to `http://localhost:5173`. |
 | `WITHYOU_PERSIST_PATH` | Test tooling only | Overrides local Cloudflare state location. |
 
@@ -68,8 +75,8 @@ npm run build
 
 ## Production requirements
 
-Production must put a trusted authentication layer in front of WithYou that supplies `x-withyou-user-id`, `x-withyou-user-email`, and optionally `x-withyou-user-full-name`. Do not expose the application publicly until the upstream layer strips untrusted versions of these headers and supplies verified identity values.
+Production uses D1-backed accounts and server-validated session cookies. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` before deployment. To enable Google sign-in, create a Google OAuth web client and register `https://YOUR_DOMAIN/api/auth/callback/google` as an authorized redirect URI, then configure both Google variables.
 
-The current pilot has no payment processing, family sharing, account/profile deletion, subscription logic, background job queue, malware scanning, or legal-authority verification. It accepts MP3, WAV, M4A, and WebM reference files up to 15 MB; generations are limited to 1,000 characters and 30 successful generations per user per day.
+The current pilot has no email verification or password-reset delivery, payment processing, family sharing, account/profile deletion, subscription logic, background job queue, malware scanning, or legal-authority verification. It accepts MP3, WAV, M4A, and WebM reference files up to 15 MB; generations are limited to 1,000 characters and 30 successful generations per user per day.
 
 See [Architecture](docs/ARCHITECTURE.md), [Testing](docs/TESTING.md), [Contributing](CONTRIBUTING.md), and [Security](SECURITY.md) for more detail.

@@ -9,6 +9,7 @@ const config = fileURLToPath(new URL('../dist/server/wrangler.json', import.meta
 const migrations = [
   fileURLToPath(new URL('../drizzle/0000_new_makkari.sql', import.meta.url)),
   fileURLToPath(new URL('../drizzle/0001_bizarre_cardiac.sql', import.meta.url)),
+  fileURLToPath(new URL('../drizzle/0002_dark_thunderball.sql', import.meta.url)),
 ];
 
 rmSync(statePath, { recursive: true, force: true });

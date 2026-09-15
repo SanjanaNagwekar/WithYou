@@ -6,8 +6,20 @@ const wav = Buffer.from([
   2, 0, 16, 0, 100, 97, 116, 97, 0, 0, 0, 0,
 ]);
 
-test('user can preserve a voice and manage a generated keepsake', async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
   await page.goto('/');
+  await expect(page).toHaveURL(/\/sign-in/);
+  await page.getByRole('button', { name: 'Create an account' }).click();
+  await page.getByLabel('YOUR NAME').fill('E2E User');
+  await page
+    .getByLabel('EMAIL')
+    .fill(`e2e-${Date.now()}-${testInfo.workerIndex}-${testInfo.retry}-${testInfo.title.replace(/\W/g, '-')}@example.test`);
+  await page.getByLabel('PASSWORD').fill('secure-test-password');
+  await page.getByRole('button', { name: 'Create account', exact: true }).click();
+  await expect(page).toHaveURL('/');
+});
+
+test('user can preserve a voice and manage a generated keepsake', async ({ page }) => {
   await page.waitForLoadState('networkidle');
   await expect(page.getByRole('heading', { name: 'Their voice. Still with you.' })).toBeVisible();
 
@@ -61,7 +73,6 @@ test.describe('mobile layout', () => {
   });
 
   test('exposes the primary controls', async ({ page }) => {
-    await page.goto('/');
     await expect(page.getByRole('button', { name: 'Preserve a voice' })).toBeVisible();
     await expect(page.getByRole('tab', { name: /Create a keepsake/ })).toBeVisible();
   });
