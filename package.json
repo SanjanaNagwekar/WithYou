@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "vinext dev --port 5173",
     "build": "vinext build",
+    "build:production": "WITHYOU_DEPLOY_TARGET=production vinext build",
+    "deploy:production": "npm run build:production && wrangler deploy --config dist/server/wrangler.json",
     "start": "wrangler dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern coverage",
     "typecheck": "tsc --noEmit",

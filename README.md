@@ -32,6 +32,17 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 npm run dev
 ```
 
+## Production deployment
+
+The production Cloudflare resource identifiers live in `deployment.json`. Build and deploy with:
+
+```bash
+npm run deploy:production
+```
+
+Production credentials must be stored as encrypted Worker secrets. They are declared as required in
+the generated Wrangler configuration and must never be committed as plain-text variables.
+
 Open `http://localhost:5173`, create an account, and sign in. Development uses an explicitly local-only session secret when `BETTER_AUTH_SECRET` is empty; production refuses to start without a configured secret and base URL. The first local account automatically takes ownership of data created by the earlier local prototype so existing recordings are not lost.
 
 To enable live voice generation, add `CARTESIA_API_KEY` to `.env`. The browser never receives this secret. Without it, original recordings can still be uploaded, played, downloaded, and deleted.

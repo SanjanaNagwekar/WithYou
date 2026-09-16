@@ -1,4 +1,11 @@
 {
   "d1": "DB",
-  "r2": "BUCKET"
+  "r2": "BUCKET",
+  "production": {
+    "workerName": "withyou",
+    "url": "https://withyou.sanjana-nagwekar.workers.dev",
+    "d1DatabaseName": "withyou-production",
+    "d1DatabaseId": "4dc4c976-3fcf-4d86-8059-a43740a80cef",
+    "r2BucketName": "withyou-audio-production"
+  }
 }
