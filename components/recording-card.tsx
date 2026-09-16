@@ -43,13 +43,14 @@ type RecordingCardProps = {
   recording: Recording;
   generationReady: boolean;
   onChanged: (message: string) => Promise<void>;
+  contextLabel?: string;
 };
 
 function messageFrom(error: unknown) {
   return error instanceof Error ? error.message : 'We could not complete that request.';
 }
 
-export function RecordingCard({ recording, generationReady, onChanged }: RecordingCardProps) {
+export function RecordingCard({ recording, generationReady, onChanged, contextLabel }: RecordingCardProps) {
   const generated = recording.kind === 'generated';
   const savedMood = recording.mood || 'natural';
   const savedPace = recording.pace || 1;
@@ -108,7 +109,7 @@ export function RecordingCard({ recording, generationReady, onChanged }: Recordi
     <article className="recording-card">
       <div className="recording-summary">
         <div className="recording-copy">
-          <small>{generated ? 'AI RECREATION' : 'ORIGINAL RECORDING'}</small>
+          <small>{contextLabel || (generated ? 'AI RECREATION' : 'ORIGINAL RECORDING')}</small>
           <h3>{recording.name}</h3>
           {recording.transcript && <p>{recording.transcript}</p>}
           {generated && (

@@ -9,7 +9,7 @@ WithYou is a private voice-keepsake application with a public product landing pa
 - Sign in with Google and safely link a verified Google identity to the same account.
 - Update a profile, change a password, revoke other sessions, and delete an account with all owned data.
 - Enable email verification and password recovery through optional server-side email delivery.
-- Keep multiple original recordings in a private recording bank.
+- Organize each person as a voice profile with separate original-audio management, keepsake creation, and recent generated keepsakes.
 - Generate a WAV keepsake through Cartesia or a deterministic local mock.
 - Change delivery settings without creating a second keepsake record.
 - Remove an individual recording or permanently remove a voice profile with all associated recordings, keepsakes, stored audio, and provider clones.

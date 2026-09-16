@@ -35,9 +35,9 @@ test('public landing guides visitors into the product', async ({ page }) => {
 
 test('user can preserve a voice and manage a generated keepsake', async ({ page }) => {
   await page.waitForLoadState('networkidle');
-  await expect(page.getByRole('heading', { name: 'Their voice. Still with you.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Voice profiles' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Preserve a voice' }).click();
+  await page.getByRole('button', { name: 'Add a voice profile' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByLabel('Name').fill('E2E Demo Voice');
   await page.getByLabel('Relationship').fill('Demo family member');
@@ -58,13 +58,19 @@ test('user can preserve a voice and manage a generated keepsake', async ({ page 
   await expect(keepsakeHeading).toBeVisible();
   await expect(page.getByText(/Warm.*1\.00.*pace.*1\.00.*volume/)).toBeVisible();
 
+  await page.getByRole('tab', { name: /Voice recordings/ }).click();
+  await expect(page.getByText('ACTIVE VOICE SAMPLE', { exact: true })).toBeVisible();
+  await expect(keepsakeHeading).toHaveCount(0);
+  await page.getByRole('tab', { name: /Keepsakes/ }).click();
+  await expect(keepsakeHeading).toBeVisible();
+
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Download You are loved, always.' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^withyou-generated-.+\.wav$/);
 
   await page.getByRole('button', { name: 'Adjust delivery for You are loved, always.' }).click();
-  await page.getByLabel('FEELING').selectOption('proud');
+  await page.getByRole('region', { name: 'Delivery for You are loved, always.' }).getByLabel('FEELING').selectOption('proud');
   await page.getByRole('button', { name: 'Update audio' }).click();
   await expect(page.getByRole('status')).toContainText('Keepsake updated.');
   await expect(page.getByText(/Proud.*pace.*volume/)).toBeVisible();
@@ -75,9 +81,11 @@ test('user can preserve a voice and manage a generated keepsake', async ({ page 
   await expect(page.getByRole('status')).toContainText('Keepsake deleted.');
   await expect(keepsakeHeading).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Remove voice' }).click();
+  await page.getByRole('tab', { name: /Voice recordings/ }).click();
+  await expect(page.getByText('ORIGINAL AUDIO ONLY')).toBeVisible();
+  await page.getByRole('button', { name: 'Remove profile' }).click();
   await expect(page.getByRole('heading', { name: 'Remove E2E Demo Voice?' })).toBeVisible();
-  await page.getByRole('button', { name: 'Remove voice and recordings' }).click();
+  await page.getByRole('button', { name: 'Remove profile and audio' }).click();
   await expect(page.getByRole('status')).toContainText('E2E Demo Voice and all associated recordings were removed.');
   await expect(page.getByRole('heading', { name: 'Start with someone special' })).toBeVisible();
 });
@@ -97,7 +105,7 @@ test('user can update profile and secure other sessions', async ({ page }) => {
   await expect(page).toHaveURL('/studio');
   await expect(page.getByText('Updated E2E User')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Preserve a voice' }).click();
+  await page.getByRole('button', { name: 'Add a voice profile' }).click();
   await page.getByRole('button', { name: 'Record now' }).click();
   await expect(page.getByText('READ THIS ALOUD')).toBeVisible();
   await expect(page.getByText(/Every morning, I open the window/)).toBeVisible();
@@ -115,7 +123,7 @@ test.describe('mobile layout', () => {
   });
 
   test('exposes the primary controls', async ({ page }) => {
-    await expect(page.getByRole('button', { name: 'Preserve a voice' })).toBeVisible();
-    await expect(page.getByRole('tab', { name: /Create a keepsake/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a voice profile' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Start with someone special' })).toBeVisible();
   });
 });

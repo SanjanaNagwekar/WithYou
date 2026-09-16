@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowUpRight,
   AudioLines,
+  ChevronRight,
   Heart,
   LockKeyhole,
   LogOut,
@@ -84,7 +84,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [text, setText] = useState('');
-  const [tab, setTab] = useState('studio');
+  const [tab, setTab] = useState('keepsakes');
   const [ready, setReady] = useState(false);
   const [mood, setMood] = useState<Mood>('natural');
   const [pace, setPace] = useState([1]);
@@ -98,6 +98,23 @@ export default function Home({ user }: { user: { displayName: string; email: str
     () => recordings.filter((recording) => recording.voice_id === selected),
     [recordings, selected],
   );
+  const originalRecordings = useMemo(
+    () => selectedRecordings.filter((recording) => recording.kind === 'original'),
+    [selectedRecordings],
+  );
+  const generatedKeepsakes = useMemo(
+    () => selectedRecordings.filter((recording) => recording.kind === 'generated'),
+    [selectedRecordings],
+  );
+  const keepsakeCountsByVoice = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const recording of recordings) {
+      if (recording.kind === 'generated') {
+        counts.set(recording.voice_id, (counts.get(recording.voice_id) || 0) + 1);
+      }
+    }
+    return counts;
+  }, [recordings]);
   const moodDescription = moodOptions.find((option) => option.value === mood)?.description ?? '';
 
   async function refresh() {
@@ -146,7 +163,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
               throw new Error('Enter 1 to 1,000 characters.');
             }
             setText(value.text);
-            setTab('studio');
+            setTab('keepsakes');
             return { staged: true, characters: value.text.length };
           },
         },
@@ -184,7 +201,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
             setMood(value.mood as Mood);
             setPace([value.pace]);
             setVolume([value.volume]);
-            setTab('studio');
+            setTab('keepsakes');
             return { staged: true, mood: value.mood, pace: value.pace, volume: value.volume };
           },
         },
@@ -293,7 +310,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
       setBankRecording(null);
       setStatus(`Recording saved to ${selectedVoice?.name || 'this voice'}’s library.`);
       await refresh();
-      setTab('library');
+      setTab('source');
     } catch (caught) {
       setError(messageFrom(caught));
     } finally {
@@ -313,7 +330,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error || 'The keepsake could not be created.');
       await refresh();
-      setTab('library');
+      setTab('keepsakes');
       setStatus('Your new keepsake is ready.');
     } catch (caught) {
       setError(messageFrom(caught));
@@ -355,71 +372,73 @@ export default function Home({ user }: { user: { displayName: string; email: str
 
   return (
     <div className="shell">
-      <header>
+      <header className="studio-header">
         {/* vinext's development Link shim can load a second React copy after hot reload. */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand" href="/"><AudioLines /> WithYou<span>VOICE KEEPSAKES</span></a>
+        <a className="brand" href="/studio"><AudioLines /> WithYou<span>PRIVATE STUDIO</span></a>
         <div className="account-summary">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a className="about-link" href="/">About WithYou</a>
           <span><LockKeyhole size={14} /><span><strong>{user.displayName}</strong><small>{user.email}</small></span></span>
           <a href="/account" aria-label="Account settings"><UserRound size={15} /></a>
           <button type="button" onClick={() => void signOut()} aria-label="Sign out"><LogOut size={15} /></button>
         </div>
       </header>
-      <main>
-        <section className="intro">
-          <div className="eyebrow">A LITTLE CLOSER, ALWAYS</div>
-          <h1>Their voice.<br /><em>Still with you.</em></h1>
-          <p>A place for the voices you never want to forget.<br />Keep a recording. Create a keepsake. Take your time.</p>
-          <div className="sound-art" aria-hidden="true">
-            {Array.from({ length: 51 }, (_, index) => (
-              <i key={index} style={{ height: Math.round(18 + Math.sin(index * 0.55) ** 2 * 90 + Math.sin(index * 0.17) ** 2 * 70) }} />
-            ))}
+      <main className="studio-main">
+        <section className="profile-directory" aria-labelledby="profiles-heading">
+          <div className="profile-directory-heading">
+            <div><span className="eyebrow">YOUR PRIVATE LIBRARY</span><h1 id="profiles-heading">Voice profiles</h1><p>Choose someone to manage their source recordings and create personal keepsakes.</p></div>
+            <button className="primary" onClick={openCreateDialog}><Plus size={17} /> Add a voice profile</button>
           </div>
-          <span className="art-caption">Some things stay with us.</span>
+
+          {voices.length ? (
+            <div className="profile-list" aria-label="Voice profiles">
+              {voices.map((voice) => {
+                const keepsakeCount = keepsakeCountsByVoice.get(voice.id) || 0;
+                return (
+                  <button
+                    className={`profile-card ${selected === voice.id ? 'active' : ''}`}
+                    key={voice.id}
+                    onClick={() => { setSelected(voice.id); setTab('keepsakes'); }}
+                    aria-pressed={selected === voice.id}
+                  >
+                    <span className="profile-avatar">{voice.name[0]}</span>
+                    <span className="profile-card-copy"><strong>{voice.name}</strong><small>{voice.relationship || 'Someone special'}</small><em>{keepsakeCount} keepsake{keepsakeCount === 1 ? '' : 's'}</em></span>
+                    <ChevronRight size={18} />
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="profile-empty"><span><Heart /></span><h2>Start with someone special</h2><p>Create a profile with one clear recording. From there, you can preserve originals and make voice keepsakes in one private place.</p><button className="primary" onClick={openCreateDialog}><Plus size={16} /> Add your first voice profile</button></div>
+          )}
         </section>
 
-        <div className="workspace-heading">
-          <div><span className="eyebrow">YOUR COLLECTION</span><h2>A familiar voice, a little closer.</h2></div>
-          <button className="primary" onClick={openCreateDialog}><Plus size={17} /> Preserve a voice</button>
+        <div className="studio-notices">
+          {error && <div className="notice" role="alert">{error}</div>}
+          {status && <div className="notice success" role="status">{status}</div>}
         </div>
 
-        <div className="workspace">
-          <aside>
-            <div className="aside-label">PRESERVED VOICES <span>{voices.length.toString().padStart(2, '0')}</span></div>
-            {voices.map((voice) => (
-              <button className={`voice ${selected === voice.id ? 'active' : ''}`} key={voice.id} onClick={() => setSelected(voice.id)}>
-                <span className="avatar">{voice.name[0]}</span>
-                <span><strong>{voice.name}</strong><small>{voice.relationship || 'Someone special'}</small></span>
-                <AudioLines size={19} />
-              </button>
-            ))}
-            {!voices.length && (
-              <div className="empty-voice"><Heart size={25} /><h3>Start with someone special</h3><p>A short recording is the first step to preserving their voice.</p><button className="text-button" onClick={openCreateDialog}>Add your first voice <ArrowUpRight size={15} /></button></div>
-            )}
-            {selectedVoice && (
-              <div className="voice-actions">
-                <button className="secondary record-memory" onClick={openRecordDialog}><Mic size={14} /> Record a memory</button>
-                <button className="secondary" onClick={openReplaceDialog}><RefreshCw size={14} /> Improve voice sample</button>
-                <button className="secondary remove-voice" onClick={() => setDeleteVoiceOpen(true)}><Trash2 size={14} /> Remove voice</button>
-                <p>Save new moments here, or improve the sample used for recreated audio.</p>
-              </div>
-            )}
-            <div className="gentle"><Heart size={19} /><p>There’s no right time.<br />Go at your own pace.</p></div>
-          </aside>
+        {selectedVoice && (
+          <section className="profile-workspace" aria-labelledby="selected-profile-heading">
+            <div className="profile-identity">
+              <span className="profile-avatar large">{selectedVoice.name[0]}</span>
+              <div><span className="eyebrow">VOICE PROFILE</span><h2 id="selected-profile-heading">{selectedVoice.name}</h2><p>{selectedVoice.relationship || 'Someone special'}</p></div>
+              <dl>
+                <div><dt>VOICE RECORDINGS</dt><dd>{originalRecordings.length}</dd></div>
+                <div><dt>KEEPSAKES</dt><dd>{generatedKeepsakes.length}</dd></div>
+              </dl>
+            </div>
 
-          <section className="studio">
             <Tabs value={tab} onValueChange={setTab}>
-              <TabsList className="studio-tabs" variant="line">
-                <TabsTrigger value="studio">Create a keepsake</TabsTrigger>
-                <TabsTrigger value="library">Recordings <span>{selectedRecordings.length}</span></TabsTrigger>
+              <TabsList className="profile-tabs" variant="line">
+                <TabsTrigger value="keepsakes"><WandSparkles size={15} /> Keepsakes <span>{generatedKeepsakes.length}</span></TabsTrigger>
+                <TabsTrigger value="source"><Mic size={15} /> Voice recordings <span>{originalRecordings.length}</span></TabsTrigger>
               </TabsList>
             </Tabs>
-            {error && <div className="notice" role="alert">{error}</div>}
-            {status && <div className="notice success" role="status">{status}</div>}
-
-            {tab === 'studio' ? (
-              <>
-                <div className="studio-title"><span className="iconbox"><AudioLines /></span><div><h3>Words to hold onto</h3><p>Write something you’d like to hear in their voice.</p></div></div>
+            {tab === 'keepsakes' ? (
+              <div className="keepsake-workspace">
+                <section className="keepsake-composer" aria-labelledby="composer-heading">
+                <div className="studio-title"><span className="iconbox"><WandSparkles /></span><div><span className="eyebrow">CREATE WITH {selectedVoice.name.toUpperCase()}’S VOICE</span><h3 id="composer-heading">Words to hold onto</h3><p>Write something you’d like to hear in their voice.</p></div></div>
                 <label htmlFor="words">YOUR WORDS</label>
                 <textarea id="words" placeholder="A little reminder, a favorite saying, a few words of love…" maxLength={1000} value={text} onChange={(event) => setText(event.target.value)} />
                 <div className="text-meta"><span>New audio is an AI recreation, not an original recording.</span><span>{text.length}/1,000</span></div>
@@ -466,22 +485,45 @@ export default function Home({ user }: { user: { displayName: string; email: str
                   <button className="primary" disabled={busy !== null || !selected || !text.trim() || !ready} onClick={() => void generate()}><WandSparkles size={16} />{busy === 'generate' ? 'Creating…' : 'Create audio'}</button>
                 </div>
                 {!ready && <p className="setup-note">Voice generation is not available yet. You can start preserving recordings now.</p>}
-              </>
+                </section>
+
+                <section className="recent-keepsakes" aria-labelledby="recent-keepsakes-heading">
+                  <div className="section-heading-row"><div><span className="eyebrow">SAVED FOR {selectedVoice.name.toUpperCase()}</span><h3 id="recent-keepsakes-heading">Recent keepsakes</h3></div><span>{generatedKeepsakes.length} total</span></div>
+                  <div className="recordings keepsake-recordings">
+                    {generatedKeepsakes.map((recording) => (
+                      <RecordingCard key={recording.id} recording={recording} generationReady={ready} onChanged={recordingChanged} />
+                    ))}
+                    {!generatedKeepsakes.length && <div className="library-empty compact"><WandSparkles /><h3>No keepsakes yet</h3><p>Your first generated keepsake will appear here, separate from the original voice recordings.</p></div>}
+                  </div>
+                </section>
+              </div>
             ) : (
-              <div className="recordings">
-                {selectedRecordings.map((recording) => (
-                  <RecordingCard
-                    key={recording.id}
-                    recording={recording}
-                    generationReady={ready}
-                    onChanged={recordingChanged}
-                  />
-                ))}
-                {!selectedRecordings.length && <div className="library-empty"><AudioLines /><h3>A home for their voice</h3><p>Your original recordings and new keepsakes will appear here.</p></div>}
+              <div className="source-workspace">
+                <div className="source-heading">
+                  <div><span className="eyebrow">ORIGINAL AUDIO ONLY</span><h3>{selectedVoice.name}’s voice recordings</h3><p>The newest recording is the active sample used to create future keepsakes. Generated audio never appears in this section.</p></div>
+                  <button className="primary" onClick={openRecordDialog}><Plus size={15} /> Add voice recording</button>
+                </div>
+                <div className="source-tools">
+                  <div><AudioLines size={19} /><span><strong>Active voice sample</strong><small>Improve the sample when you have a clearer or more expressive recording.</small></span></div>
+                  <button className="secondary inline" onClick={openReplaceDialog}><RefreshCw size={14} /> Improve sample</button>
+                </div>
+                <div className="recordings source-recordings">
+                  {originalRecordings.map((recording, index) => (
+                    <RecordingCard
+                      key={recording.id}
+                      recording={recording}
+                      generationReady={ready}
+                      onChanged={recordingChanged}
+                      contextLabel={index === 0 ? 'ACTIVE VOICE SAMPLE' : 'ORIGINAL RECORDING'}
+                    />
+                  ))}
+                  {!originalRecordings.length && <div className="library-empty compact"><Mic /><h3>No original recordings</h3><p>Add a clear voice recording before creating a keepsake.</p><button className="primary" onClick={openRecordDialog}><Plus size={15} /> Add a recording</button></div>}
+                </div>
+                <div className="profile-danger"><div><strong>Remove this voice profile</strong><p>Deletes every original recording and generated keepsake associated with {selectedVoice.name}.</p></div><button className="secondary remove-voice" onClick={() => setDeleteVoiceOpen(true)}><Trash2 size={14} /> Remove profile</button></div>
               </div>
             )}
           </section>
-        </div>
+        )}
 
         <footer><span className="brand small"><AudioLines size={18} /> WithYou</span><p>Made for memories. Held with care.</p><span>PRIVATE MVP · AI AUDIO IS LABELED</span></footer>
       </main>
@@ -533,14 +575,14 @@ export default function Home({ user }: { user: { displayName: string; email: str
 
       <Dialog open={recordOpen} onOpenChange={(open) => { setRecordOpen(open); if (!open) setBankRecording(null); }}>
         <DialogContent className="voice-dialog recording-dialog">
-          <DialogHeader><DialogTitle>Record a memory</DialogTitle><DialogDescription>Capture something new for {selectedVoice?.name || 'this voice'}’s private recording bank.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Add a voice recording</DialogTitle><DialogDescription>Capture another original recording for {selectedVoice?.name || 'this voice'}’s voice profile.</DialogDescription></DialogHeader>
           <form onSubmit={saveRecording}>
             <label>Recording title<input name="name" required maxLength={100} placeholder="A favorite story, a birthday wish…" /></label>
             <VoiceRecorder id="memory-recorder" file={bankRecording} onFileChange={setBankRecording} disabled={busy !== null} />
             <label className="consent"><Checkbox name="consent" value="yes" required aria-label="Permission to save this recording" />I have permission or the appropriate authority to record and save this voice.</label>
-            <p className="setup-note">This saves the original recording to the private library. It is not an AI recreation.</p>
+            <p className="setup-note">This saves original audio—not an AI recreation—and makes it the active sample for future keepsakes.</p>
             {error && <p className="form-error" role="alert">{error}</p>}
-            <button className="primary" disabled={busy !== null || !bankRecording}><Mic size={15} />{busy === 'record' ? 'Saving recording…' : 'Save to recording bank'}</button>
+            <button className="primary" disabled={busy !== null || !bankRecording}><Mic size={15} />{busy === 'record' ? 'Saving recording…' : 'Save voice recording'}</button>
           </form>
         </DialogContent>
       </Dialog>
@@ -550,13 +592,13 @@ export default function Home({ user }: { user: { displayName: string; email: str
           <AlertDialogHeader>
             <AlertDialogTitle>Remove {selectedVoice?.name || 'this voice'}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the voice profile, its {selectedRecordings.length} recording{selectedRecordings.length === 1 ? '' : 's'}, every generated keepsake, and the cloned provider voice. This cannot be undone.
+              This permanently removes the voice profile, {originalRecordings.length} original recording{originalRecordings.length === 1 ? '' : 's'}, {generatedKeepsakes.length} generated keepsake{generatedKeepsakes.length === 1 ? '' : 's'}, and the cloned provider voice. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy === 'delete-voice'}>Keep voice</AlertDialogCancel>
             <AlertDialogAction disabled={busy === 'delete-voice'} onClick={() => void deleteVoice()}>
-              {busy === 'delete-voice' ? 'Removing…' : 'Remove voice and recordings'}
+              {busy === 'delete-voice' ? 'Removing…' : 'Remove profile and audio'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
