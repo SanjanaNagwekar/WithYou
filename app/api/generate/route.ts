@@ -2,6 +2,7 @@ import { AppError, context, failure } from '@/lib/server';
 import { getVoiceProvider, isVoiceProviderConfigured } from '@/lib/providers';
 import { getTranslationProvider } from '@/lib/providers/translation';
 import { parseKeepsakeRequest } from '@/lib/validation';
+import { keepsakeLocalizationAccent } from '@/lib/languages';
 import {
   acquireGenerationLock,
   enforceGenerationLimit,
@@ -21,7 +22,6 @@ export async function POST(request: Request) {
       text?: unknown;
       voiceId?: unknown;
       targetLanguage?: unknown;
-      localizationGender?: unknown;
       mood?: unknown;
       pace?: unknown;
       volume?: unknown;
@@ -30,20 +30,18 @@ export async function POST(request: Request) {
       sourceText,
       voiceId,
       targetLanguage,
-      localizationGender,
       delivery,
     } = parseKeepsakeRequest(body);
 
     const voice = await db
       .prepare(
-        'SELECT id,name,voice_id,localization_gender FROM voices WHERE id=? AND owner=?',
+        'SELECT id,name,voice_id FROM voices WHERE id=? AND owner=?',
       )
       .bind(voiceId, owner)
       .first<{
         id: string;
         name: string;
         voice_id: string | null;
-        localization_gender: 'male' | 'female' | null;
       }>();
     if (!voice) throw new AppError('Voice not found.', 404);
 
@@ -88,26 +86,6 @@ export async function POST(request: Request) {
 
     let synthesisVoiceId = voice.voice_id;
     if (targetLanguage !== 'en') {
-      if (!localizationGender) {
-        throw new AppError('Choose the voice type used to localize this voice.');
-      }
-      if (
-        voice.localization_gender &&
-        voice.localization_gender !== localizationGender
-      ) {
-        throw new AppError(
-          'This voice profile already uses a different localization voice type.',
-          409,
-        );
-      }
-      if (!voice.localization_gender) {
-        await db
-          .prepare('UPDATE voices SET localization_gender=? WHERE id=? AND owner=?')
-          .bind(localizationGender, voice.id, owner)
-          .run();
-        voice.localization_gender = localizationGender;
-      }
-
       const existingVariant = await db
         .prepare(
           'SELECT provider_voice_id FROM voice_variants WHERE voice_id=? AND owner=? AND language=?',
@@ -120,7 +98,7 @@ export async function POST(request: Request) {
         const localizedVoiceId = await provider.localizeVoice({
           providerVoiceId: voice.voice_id,
           language: targetLanguage,
-          gender: localizationGender,
+          accent: keepsakeLocalizationAccent(targetLanguage),
           name: voice.name,
         });
         try {

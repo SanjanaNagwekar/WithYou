@@ -99,9 +99,8 @@ test('user can preserve a voice and manage a generated keepsake', async ({ page 
 
   await page.getByLabel('YOUR WORDS').fill('You are loved, always.');
   await page.getByLabel('LANGUAGE', { exact: true }).selectOption('es');
-  await page.getByLabel('VOICE TYPE').selectOption('female');
   await page.getByRole('button', { name: 'Create audio' }).click();
-  await expect(page.getByRole('status')).toContainText('Your Spanish keepsake is ready.');
+  await expect(page.getByRole('status')).toContainText('Your Spanish (Spain) keepsake is ready.');
   await expect(
     page.getByRole('heading', { name: 'Siempre eres una persona amada.' }),
   ).toBeVisible();

@@ -182,7 +182,6 @@ describe('recording API lifecycle', () => {
           text: 'You are loved, always.',
           voiceId,
           targetLanguage: 'es',
-          localizationGender: 'female',
           mood: 'warm',
           pace: 1,
           volume: 1,

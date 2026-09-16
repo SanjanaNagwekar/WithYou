@@ -8,7 +8,7 @@ export class MockVoiceProvider implements VoiceProvider {
   }
 
   async localizeVoice(input: LocalizeVoiceInput): Promise<string> {
-    return `mock-localized-${input.language}-${stableHash(`${input.providerVoiceId}:${input.gender}`)}`;
+    return `mock-localized-${input.language}-${stableHash(`${input.providerVoiceId}:${input.accent}`)}`;
   }
 
   async deleteVoice(): Promise<void> {}

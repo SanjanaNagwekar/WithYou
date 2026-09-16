@@ -45,8 +45,8 @@ export class CartesiaVoiceProvider implements VoiceProvider {
         voice_id: input.providerVoiceId,
         name: `${input.name} — ${input.language}`,
         description: 'Private localized WithYou voice keepsake',
-        language: input.language,
-        original_speaker_gender: input.gender,
+        accent: input.accent,
+        access: 'private',
       }),
     });
     const localized = (await response.json()) as { id?: string };
@@ -120,11 +120,35 @@ export class CartesiaVoiceProvider implements VoiceProvider {
     });
     if (response.ok) return response;
 
-    const detail = (await response.json().catch(() => null)) as { error_code?: string } | null;
+    const detail = (await response.json().catch(() => null)) as {
+      error_code?: unknown;
+      error?: { code?: unknown };
+      detail?: unknown;
+    } | null;
+    const rawCode = detail?.error_code ?? detail?.error?.code;
     const code =
-      typeof detail?.error_code === 'string' && /^[a-z_]{1,80}$/.test(detail.error_code)
-        ? detail.error_code
+      typeof rawCode === 'string' && /^[a-z_]{1,80}$/.test(rawCode)
+        ? rawCode
         : 'unknown';
+    const validation = Array.isArray(detail?.detail)
+      ? detail.detail.slice(0, 5).flatMap((issue) => {
+          if (!issue || typeof issue !== 'object') return [];
+          const candidate = issue as { type?: unknown; loc?: unknown };
+          const type =
+            typeof candidate.type === 'string' && /^[a-z_]{1,80}$/.test(candidate.type)
+              ? candidate.type
+              : 'unknown';
+          const location = Array.isArray(candidate.loc)
+            ? candidate.loc
+                .filter((part): part is string | number =>
+                  typeof part === 'number' ||
+                  (typeof part === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(part)),
+                )
+                .join('.')
+            : '';
+          return [{ type, location }];
+        })
+      : undefined;
     console.error('Voice service rejected request', {
       stage:
         path === '/voices/clone'
@@ -134,6 +158,7 @@ export class CartesiaVoiceProvider implements VoiceProvider {
             : 'generation',
       status: response.status,
       code,
+      validation,
     });
     if (code === 'plan_upgrade_required') {
       throw new AppError(

@@ -58,7 +58,7 @@ describe('CartesiaVoiceProvider', () => {
       provider.localizeVoice({
         providerVoiceId: 'clone-123',
         language: 'fr',
-        gender: 'female',
+        accent: 'parisian',
         name: 'Sample voice',
       }),
     ).resolves.toBe('localized-123');
@@ -67,8 +67,8 @@ describe('CartesiaVoiceProvider', () => {
     expect(url).toBe('https://api.cartesia.ai/voices/localize');
     expect(JSON.parse(init.body)).toMatchObject({
       voice_id: 'clone-123',
-      language: 'fr',
-      original_speaker_gender: 'female',
+      accent: 'parisian',
+      access: 'private',
     });
   });
 

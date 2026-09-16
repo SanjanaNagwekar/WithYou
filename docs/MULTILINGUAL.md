@@ -6,13 +6,13 @@ WithYou treats speaker similarity as a release requirement, not a best-effort op
 
 1. A user writes an English source message.
 2. The server translates it with Google Cloud Translation Advanced v3.
-3. On the first keepsake for a language, WithYou asks Cartesia to create a localized derivative of the profile's original clone.
+3. On the first keepsake for a language, WithYou asks Cartesia to create a localized derivative of the profile's original clone using a verified localizable accent ID.
 4. The localized provider voice ID is cached in D1 and reused for later keepsakes in that language.
 5. Cartesia immediately synthesizes the translated text with the matching language code.
 
 English continues to use the original clone. Replacing a profile's active reference recording deletes the prior base clone and all localized variants so future generations are rebuilt from the improved sample. Existing audio files remain playable.
 
-The approved language set is English, German, Spanish, French, Japanese, Portuguese, Mandarin Chinese, Hindi, Italian, Korean, Dutch, Polish, Russian, Swedish, and Turkish.
+The approved language set is English, German, Spanish (Spain), French (France), Japanese, Portuguese (Brazil), Mandarin Chinese, Hindi, Italian, Korean, Dutch, Polish, Russian, Swedish, and Turkish. Each non-English option is mapped to an accent currently marked localizable in Cartesia's accent catalog. The mapping lives in `lib/languages.ts` and must be revalidated against `GET /accents?is_localizable=true` when the provider API changes.
 
 ## Google Cloud setup
 

@@ -1,6 +1,6 @@
 import { AppError, context, failure } from '@/lib/server';
 import { getVoiceProvider, isVoiceProviderConfigured } from '@/lib/providers';
-import { isKeepsakeLanguage } from '@/lib/languages';
+import { isKeepsakeLanguage, keepsakeLocalizationAccent } from '@/lib/languages';
 import {
   acquireGenerationLock,
   enforceGenerationLimit,
@@ -16,7 +16,6 @@ type RecordingRow = {
   transcript: string;
   provider_voice_id: string | null;
   target_language: string;
-  localization_gender: 'male' | 'female' | null;
   voice_name: string;
 };
 
@@ -24,7 +23,7 @@ async function findRecording(db: D1Database, owner: string, id: string) {
   return db
     .prepare(
       `SELECT r.id,r.voice_id,r.kind,r.object_key,r.transcript,r.target_language,
-              v.voice_id AS provider_voice_id,v.localization_gender,v.name AS voice_name
+              v.voice_id AS provider_voice_id,v.name AS voice_name
        FROM recordings r
        JOIN voices v ON v.id=r.voice_id AND v.owner=r.owner
        WHERE r.id=? AND r.owner=?`,
@@ -94,9 +93,6 @@ export async function PATCH(
 
     let synthesisVoiceId = recording.provider_voice_id;
     if (recording.target_language !== 'en') {
-      if (!recording.localization_gender) {
-        throw new AppError('This keepsake is missing voice localization settings.', 409);
-      }
       const variant = await db
         .prepare(
           'SELECT provider_voice_id FROM voice_variants WHERE voice_id=? AND owner=? AND language=?',
@@ -109,7 +105,7 @@ export async function PATCH(
         synthesisVoiceId = await getVoiceProvider().localizeVoice({
           providerVoiceId: recording.provider_voice_id,
           language: recording.target_language,
-          gender: recording.localization_gender,
+          accent: keepsakeLocalizationAccent(recording.target_language),
           name: recording.voice_name,
         });
         try {

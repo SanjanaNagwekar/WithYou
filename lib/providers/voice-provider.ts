@@ -1,5 +1,5 @@
 import type { DeliverySettings } from '@/lib/validation';
-import type { KeepsakeLanguage, LocalizationGender } from '@/lib/languages';
+import type { KeepsakeLanguage } from '@/lib/languages';
 
 export type CloneVoiceInput = {
   audio: ArrayBuffer;
@@ -11,7 +11,7 @@ export type CloneVoiceInput = {
 export type LocalizeVoiceInput = {
   providerVoiceId: string;
   language: Exclude<KeepsakeLanguage, 'en'>;
-  gender: LocalizationGender;
+  accent: string;
   name: string;
 };
 

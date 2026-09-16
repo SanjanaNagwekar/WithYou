@@ -72,7 +72,7 @@ The guided recorder uses the Web Audio API only inside the browser to measure mi
 3. Shared validators constrain text, files, consent, and delivery settings.
 4. Database queries include the owner boundary.
 5. For a multilingual request, the server translates the source text before any audio request is made.
-6. Generation acquires a per-voice lock, checks the daily quota, and resolves or creates the language-specific localized voice.
+6. Generation acquires a per-voice lock, checks the daily quota, and resolves or creates the language-specific localized voice using the language's verified Cartesia accent ID.
 7. The provider returns WAV bytes, which are stored in R2 before metadata is committed to D1.
 8. Updates regenerate the same logical keepsake with its language-specific voice and replace its audio object.
 

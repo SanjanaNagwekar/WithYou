@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '@/lib/errors';
+import { keepsakeLocalizationAccent } from '@/lib/languages';
 import {
   MAX_AUDIO_BYTES,
   MAX_REQUEST_BYTES,
@@ -49,7 +50,6 @@ describe('keepsake request validation', () => {
       sourceText: 'I am proud of you.',
       voiceId: 'voice-1',
       targetLanguage: 'en',
-      localizationGender: undefined,
       delivery: { mood: 'proud', pace: 1.1, volume: 0.9 },
     });
   });
@@ -66,31 +66,27 @@ describe('keepsake request validation', () => {
     ).toThrow('Select a voice and enter between 1 and 1,000 characters.');
   });
 
-  it('accepts a localized keepsake and rejects missing localization settings', () => {
+  it('accepts a localized keepsake without obsolete localization settings', () => {
     expect(
       parseKeepsakeRequest({
         text: 'Siempre eres una persona amada.',
         voiceId: 'voice-1',
         targetLanguage: 'es',
-        localizationGender: 'female',
         mood: 'warm',
         pace: 1,
         volume: 1,
       }),
     ).toMatchObject({
       targetLanguage: 'es',
-      localizationGender: 'female',
+      sourceText: 'Siempre eres una persona amada.',
     });
-    expect(() =>
-      parseKeepsakeRequest({
-        text: 'Hola',
-        voiceId: 'voice-1',
-        targetLanguage: 'es',
-        mood: 'natural',
-        pace: 1,
-        volume: 1,
-      }),
-    ).toThrow('Choose the voice type used to localize this voice.');
+  });
+});
+
+describe('voice localization accents', () => {
+  it('maps offered languages to Cartesia localizable accent IDs', () => {
+    expect(keepsakeLocalizationAccent('es')).toBe('castilian');
+    expect(keepsakeLocalizationAccent('hi')).toBe('standard-hindi');
   });
 });
 

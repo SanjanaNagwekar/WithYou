@@ -45,7 +45,6 @@ import {
   keepsakeLanguageName,
   keepsakeLanguages,
   type KeepsakeLanguage,
-  type LocalizationGender,
 } from '@/lib/languages';
 
 type Voice = {
@@ -53,7 +52,6 @@ type Voice = {
   name: string;
   relationship: string;
   voice_id: string | null;
-  localization_gender: LocalizationGender | null;
 };
 type LibraryResponse = {
   error?: string;
@@ -108,9 +106,6 @@ export default function Home({ user }: { user: { displayName: string; email: str
   const [ready, setReady] = useState(false);
   const [translationReady, setTranslationReady] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<KeepsakeLanguage>('en');
-  const [localizationChoices, setLocalizationChoices] = useState<
-    Record<string, LocalizationGender>
-  >({});
   const [mood, setMood] = useState<Mood>('natural');
   const [pace, setPace] = useState([1]);
   const [volume, setVolume] = useState([1]);
@@ -141,7 +136,6 @@ export default function Home({ user }: { user: { displayName: string; email: str
     return counts;
   }, [recordings]);
   const moodDescription = moodOptions.find((option) => option.value === mood)?.description ?? '';
-  const localizationGender = selectedVoice?.localization_gender || localizationChoices[selected] || '';
 
   async function refresh() {
     try {
@@ -349,9 +343,6 @@ export default function Home({ user }: { user: { displayName: string; email: str
     startAction();
     setBusy('generate');
     try {
-      if (targetLanguage !== 'en' && !localizationGender) {
-        throw new Error('Choose the voice type used for localization.');
-      }
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -359,7 +350,6 @@ export default function Home({ user }: { user: { displayName: string; email: str
           voiceId: selected,
           text: text.trim(),
           targetLanguage,
-          localizationGender: targetLanguage === 'en' ? undefined : localizationGender,
           mood,
           pace: pace[0],
           volume: volume[0],
@@ -518,31 +508,6 @@ export default function Home({ user }: { user: { displayName: string; email: str
                     <p className="setup-note">Translation is ready in the product but still needs its private Google Cloud credential.</p>
                   )}
 
-                  {targetLanguage !== 'en' && !selectedVoice.localization_gender && (
-                    <div className="localization-voice-type">
-                      <div>
-                        <label htmlFor="localization-gender">VOICE TYPE</label>
-                        <p>Cartesia uses this once to preserve the voice while localizing pronunciation.</p>
-                      </div>
-                      <div className="select-wrap">
-                        <select
-                          id="localization-gender"
-                          value={localizationGender}
-                          onChange={(event) =>
-                            setLocalizationChoices((current) => ({
-                              ...current,
-                              [selected]: event.target.value as LocalizationGender,
-                            }))
-                          }
-                          disabled={busy !== null}
-                        >
-                          <option value="">Choose voice type</option>
-                          <option value="female">Feminine</option>
-                          <option value="male">Masculine</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
                   <p className="quality-note"><LockKeyhole size={13} /> Only languages with dedicated voice localization are offered, so similarity is prioritized over language count.</p>
                 </section>
 
@@ -588,7 +553,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
                       !selected ||
                       !text.trim() ||
                       !ready ||
-                      (targetLanguage !== 'en' && (!translationReady || !localizationGender))
+                      (targetLanguage !== 'en' && !translationReady)
                     }
                     onClick={() => void generate()}
                   ><WandSparkles size={16} />{busy === 'generate' ? (targetLanguage === 'en' ? 'Creating…' : 'Translating & creating…') : 'Create audio'}</button>
