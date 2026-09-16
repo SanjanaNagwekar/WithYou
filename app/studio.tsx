@@ -12,11 +12,22 @@ import {
   Plus,
   RefreshCw,
   SlidersHorizontal,
+  Trash2,
   UserRound,
   WandSparkles,
 } from 'lucide-react';
 import { AudioSource, type AudioSourceMode } from '@/components/audio-source';
 import { RecordingCard, type Recording } from '@/components/recording-card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
@@ -49,7 +60,7 @@ const moodOptions = [
 ] as const;
 
 type Mood = (typeof moodOptions)[number]['value'];
-type BusyAction = 'create' | 'replace' | 'record' | 'generate' | null;
+type BusyAction = 'create' | 'replace' | 'record' | 'generate' | 'delete-voice' | null;
 
 function messageFrom(error: unknown) {
   return error instanceof Error ? error.message : 'We could not complete that request.';
@@ -63,6 +74,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
   const [createOpen, setCreateOpen] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [recordOpen, setRecordOpen] = useState(false);
+  const [deleteVoiceOpen, setDeleteVoiceOpen] = useState(false);
   const [createSource, setCreateSource] = useState<AudioSourceMode>('upload');
   const [replaceSource, setReplaceSource] = useState<AudioSourceMode>('upload');
   const [createRecording, setCreateRecording] = useState<File | null>(null);
@@ -316,6 +328,25 @@ export default function Home({ user }: { user: { displayName: string; email: str
     await refresh();
   }
 
+  async function deleteVoice() {
+    if (!selected) return;
+    startAction();
+    setBusy('delete-voice');
+    try {
+      const response = await fetch(`/api/voices/${selected}`, { method: 'DELETE' });
+      const data = response.status === 204 ? null : ((await response.json()) as { error?: string });
+      if (!response.ok) throw new Error(data?.error || 'The voice could not be removed.');
+      const deletedName = selectedVoice?.name || 'Voice';
+      setDeleteVoiceOpen(false);
+      setStatus(`${deletedName} and all associated recordings were removed.`);
+      await refresh();
+    } catch (caught) {
+      setError(messageFrom(caught));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function signOut() {
     await authClient.signOut();
     router.replace('/sign-in');
@@ -369,6 +400,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
               <div className="voice-actions">
                 <button className="secondary record-memory" onClick={openRecordDialog}><Mic size={14} /> Record a memory</button>
                 <button className="secondary" onClick={openReplaceDialog}><RefreshCw size={14} /> Improve voice sample</button>
+                <button className="secondary remove-voice" onClick={() => setDeleteVoiceOpen(true)}><Trash2 size={14} /> Remove voice</button>
                 <p>Save new moments here, or improve the sample used for recreated audio.</p>
               </div>
             )}
@@ -512,6 +544,23 @@ export default function Home({ user }: { user: { displayName: string; email: str
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteVoiceOpen} onOpenChange={setDeleteVoiceOpen}>
+        <AlertDialogContent className="delete-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {selectedVoice?.name || 'this voice'}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the voice profile, its {selectedRecordings.length} recording{selectedRecordings.length === 1 ? '' : 's'}, every generated keepsake, and the cloned provider voice. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy === 'delete-voice'}>Keep voice</AlertDialogCancel>
+            <AlertDialogAction disabled={busy === 'delete-voice'} onClick={() => void deleteVoice()}>
+              {busy === 'delete-voice' ? 'Removing…' : 'Remove voice and recordings'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

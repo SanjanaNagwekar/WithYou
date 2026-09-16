@@ -9,5 +9,6 @@ export type CloneVoiceInput = {
 
 export interface VoiceProvider {
   cloneVoice(input: CloneVoiceInput): Promise<string>;
+  deleteVoice(providerVoiceId: string): Promise<void>;
   synthesize(transcript: string, providerVoiceId: string, delivery: DeliverySettings): Promise<ArrayBuffer>;
 }

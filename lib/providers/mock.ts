@@ -6,6 +6,8 @@ export class MockVoiceProvider implements VoiceProvider {
     return `mock-${stableHash(`${input.name}:${input.fileName}:${input.audio.byteLength}`)}`;
   }
 
+  async deleteVoice(): Promise<void> {}
+
   async synthesize(
     transcript: string,
     providerVoiceId: string,

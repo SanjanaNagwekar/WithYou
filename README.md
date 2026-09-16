@@ -4,7 +4,7 @@ WithYou is a private voice-keepsake application. It preserves consented referenc
 
 ## Current capabilities
 
-- Create a voice profile from an uploaded file or browser recording.
+- Create a voice profile from an uploaded file or a guided browser recording with local voice-activity feedback and automatic completion.
 - Create an account with email and password, sign in with a secure session, and sign out.
 - Sign in with Google and safely link a verified Google identity to the same account.
 - Update a profile, change a password, revoke other sessions, and delete an account with all owned data.
@@ -12,6 +12,7 @@ WithYou is a private voice-keepsake application. It preserves consented referenc
 - Keep multiple original recordings in a private recording bank.
 - Generate a WAV keepsake through Cartesia or a deterministic local mock.
 - Change delivery settings without creating a second keepsake record.
+- Remove an individual recording or permanently remove a voice profile with all associated recordings, keepsakes, stored audio, and provider clones.
 - Enforce per-owner access, same-origin writes, daily generation limits, and per-voice generation locks.
 - Store metadata in Cloudflare D1 and private audio objects in Cloudflare R2.
 - Test validation, provider behavior, API/data boundaries, and the primary browser journey.

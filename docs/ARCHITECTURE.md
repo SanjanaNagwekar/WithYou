@@ -50,11 +50,15 @@ VoiceProvider interface
 
 Audio bytes are never stored in D1. Each recording points to a private R2 object key. API handlers verify ownership before returning or changing metadata and objects.
 
+Deleting a voice is an owner-checked cascading application operation: it removes the remote provider clone first, deletes every associated R2 object, then removes generation locks, events, recordings, and the voice row from D1. A provider failure stops the local deletion so the application retains the identifier needed to retry remote cleanup.
+
 ## Trust and privacy model
 
 Email/password credentials use the authentication library's password hashing and are never stored in plaintext. Google access, refresh, and ID tokens are encrypted at rest with AES-256-GCM; a migration removes legacy plaintext provider tokens. Verification identifiers are hashed. Sessions expire after seven days, refresh at most daily, and use HTTP-only, same-site cookies that become secure-only in production. Sensitive operations require a session created within the last 15 minutes unless the user confirms their password. Google OAuth is enabled only when both provider credentials are present. Production also requires a high-entropy authentication secret and an explicit public base URL.
 
 Reference recordings and requested text are sent to the configured speech provider when generating. Provider credentials stay server-side. Mock mode requires a second explicit opt-in so an accidental environment-value change cannot silently enable it.
+
+The guided recorder uses the Web Audio API only inside the browser to measure microphone energy. It does not transcribe the prompt or send live microphone data to a speech-recognition service. Recorded bytes are uploaded only when the user explicitly saves the form.
 
 ## Request lifecycle
 

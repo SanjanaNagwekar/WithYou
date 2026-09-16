@@ -8,12 +8,12 @@
 | Type safety | `npm run typecheck` | TypeScript without emitting build files. |
 | Unit | `npm run test:coverage` | Validation, environment configuration, and provider behavior. |
 | API integration | `npm run test:integration` | Real auth/app route handlers against temporary isolated D1 and R2 resources. |
-| Browser | `npm run test:e2e` | Account creation, account settings, desktop primary journey, and mobile control smoke test in Chromium. |
+| Browser | `npm run test:e2e` | Account creation, account settings, guided recording UI, voice deletion, desktop primary journey, and mobile control smoke test in Chromium. |
 | Production build | `npm run build` | Complete Vinext build and route compilation. |
 
 ## Isolation
 
-Unit tests do not require network services. API integration tests create Miniflare runtimes with temporary D1 and R2 resources, apply the checked-in migrations, and destroy the runtimes afterward. Authentication coverage verifies password account creation, session cookies, repeat sign-in, Google OAuth authorization URL creation, profile updates, password rotation, and complete account/data deletion without contacting Google or the email provider.
+Unit tests do not require network services. API integration tests create Miniflare runtimes with temporary D1 and R2 resources, apply the checked-in migrations, and destroy the runtimes afterward. Authentication coverage verifies password account creation, session cookies, repeat sign-in, Google OAuth authorization URL creation, profile updates, password rotation, and complete account/data deletion without contacting Google or the email provider. Recording coverage verifies owner isolation and cascading voice deletion across D1, R2, and the configured voice-provider boundary.
 
 End-to-end preparation deletes only `.wrangler/e2e-state`, rebuilds the application, and reapplies migrations. Playwright starts the server with the deterministic mock voice provider. It never calls Cartesia and never reads a live provider key.
 

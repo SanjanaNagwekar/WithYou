@@ -60,6 +60,12 @@ test('user can preserve a voice and manage a generated keepsake', async ({ page 
   await page.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Keepsake deleted.');
   await expect(keepsakeHeading).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Remove voice' }).click();
+  await expect(page.getByRole('heading', { name: 'Remove E2E Demo Voice?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Remove voice and recordings' }).click();
+  await expect(page.getByRole('status')).toContainText('E2E Demo Voice and all associated recordings were removed.');
+  await expect(page.getByRole('heading', { name: 'Start with someone special' })).toBeVisible();
 });
 
 test('user can update profile and secure other sessions', async ({ page }) => {
@@ -76,6 +82,12 @@ test('user can update profile and secure other sessions', async ({ page }) => {
   await page.getByRole('link', { name: 'Back to library' }).click();
   await expect(page).toHaveURL('/');
   await expect(page.getByText('Updated E2E User')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Preserve a voice' }).click();
+  await page.getByRole('button', { name: 'Record now' }).click();
+  await expect(page.getByText('READ THIS ALOUD')).toBeVisible();
+  await expect(page.getByText(/Every morning, I open the window/)).toBeVisible();
+  await page.keyboard.press('Escape');
 });
 
 test.describe('mobile layout', () => {

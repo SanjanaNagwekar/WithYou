@@ -32,6 +32,28 @@ export class CartesiaVoiceProvider implements VoiceProvider {
     return clone.id;
   }
 
+  async deleteVoice(providerVoiceId: string): Promise<void> {
+    const response = await this.fetchImplementation(
+      `https://api.cartesia.ai/voices/${encodeURIComponent(providerVoiceId)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${this.config.CARTESIA_API_KEY}`,
+          'Cartesia-Version': '2026-08-14',
+        },
+        signal: AbortSignal.timeout(30000),
+      },
+    );
+    if (response.ok || response.status === 404) return;
+    if (response.status === 401 || response.status === 403) {
+      throw new AppError('The voice service could not authorize deletion. Please try again later.', 503);
+    }
+    if (response.status === 429) {
+      throw new AppError('The voice service is busy. Please wait before deleting this voice.', 429);
+    }
+    throw new AppError('The voice service could not delete this voice. Please try again later.', 502);
+  }
+
   async synthesize(
     transcript: string,
     providerVoiceId: string,

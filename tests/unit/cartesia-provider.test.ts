@@ -49,6 +49,32 @@ describe('CartesiaVoiceProvider', () => {
     ).resolves.toBe('clone-123');
   });
 
+  it('deletes a cloned provider voice and treats an already missing voice as deleted', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(null, { status: 404 }));
+    const provider = new CartesiaVoiceProvider(config, fetchMock as typeof fetch);
+
+    await expect(provider.deleteVoice('clone/123')).resolves.toBeUndefined();
+    await expect(provider.deleteVoice('clone/123')).resolves.toBeUndefined();
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.cartesia.ai/voices/clone%2F123');
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: 'DELETE' });
+  });
+
+  it.each([
+    [401, 503],
+    [429, 429],
+    [500, 502],
+  ])('maps provider deletion status %s to a safe application error', async (status, expectedStatus) => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status }));
+    const provider = new CartesiaVoiceProvider(config, fetchMock as typeof fetch);
+    const error = await provider.deleteVoice('clone-123').catch((caught) => caught);
+    expect(error).toBeInstanceOf(AppError);
+    expect(error.status).toBe(expectedStatus);
+    expect(error.message).not.toContain('test-key');
+  });
+
   it.each([
     [401, {}, 503],
     [429, {}, 429],

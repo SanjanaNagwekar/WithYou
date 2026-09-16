@@ -18,14 +18,19 @@ vi.mock('@/app/auth', () => ({ getAuthenticatedUser: vi.fn(async () => state.use
 import { GET as getLibrary, POST as createVoice } from '@/app/api/library/route';
 import { POST as generateKeepsake } from '@/app/api/generate/route';
 import { DELETE as deleteRecording, PATCH as updateRecording } from '@/app/api/recordings/[id]/route';
+import { DELETE as deleteVoice } from '@/app/api/voices/[id]/route';
 import { GET as getAudio } from '@/app/api/audio/[id]/route';
 
 describe('recording API lifecycle', () => {
   let runtime: Miniflare | undefined;
+  let db: Awaited<ReturnType<typeof createTestRuntime>>['db'];
+  let bucket: Awaited<ReturnType<typeof createTestRuntime>>['bucket'];
 
   beforeEach(async () => {
     const testRuntime = await createTestRuntime();
     runtime = testRuntime.runtime;
+    db = testRuntime.db;
+    bucket = testRuntime.bucket;
     Object.assign(state.env, {
       DB: testRuntime.db,
       BUCKET: testRuntime.bucket,
@@ -78,6 +83,11 @@ describe('recording API lifecycle', () => {
     expect(data.voices).toHaveLength(1);
     expect(data.recordings).toHaveLength(2);
     expect(data.recordings.some((recording) => recording.id === recordingId)).toBe(true);
+    const originalRecordingId = data.recordings.find((recording) => recording.id !== recordingId)!.id;
+    const originalObject = await db
+      .prepare('SELECT object_key FROM recordings WHERE id=?')
+      .bind(originalRecordingId)
+      .first<{ object_key: string }>();
 
     const audio = await getAudio(new Request(`http://localhost/api/audio/${recordingId}`), {
       params: Promise.resolve({ id: recordingId }),
@@ -106,6 +116,23 @@ describe('recording API lifecycle', () => {
       params: Promise.resolve({ id: recordingId }),
     });
     expect(missing.status).toBe(404);
+
+    const deletedVoice = await deleteVoice(
+      new Request(`http://localhost/api/voices/${voiceId}`, { method: 'DELETE' }),
+      { params: Promise.resolve({ id: voiceId }) },
+    );
+    expect(deletedVoice.status).toBe(204);
+    const emptyLibrary = await getLibrary(new Request('http://localhost/api/library'));
+    expect((await emptyLibrary.json()) as { voices: unknown[]; recordings: unknown[] }).toMatchObject({
+      voices: [],
+      recordings: [],
+    });
+    const missingOriginal = await getAudio(
+      new Request(`http://localhost/api/audio/${originalRecordingId}`),
+      { params: Promise.resolve({ id: originalRecordingId }) },
+    );
+    expect(missingOriginal.status).toBe(404);
+    expect(await bucket.get(originalObject!.object_key)).toBeNull();
   });
 
   it('isolates each user and rejects anonymous access', async () => {
@@ -116,12 +143,18 @@ describe('recording API lifecycle', () => {
     form.set('audio', audioFixture('private.wav'));
     const created = await createVoice(new Request('http://localhost/api/library', { method: 'POST', body: form }));
     expect(created.status).toBe(201);
+    const privateVoiceId = ((await created.json()) as { id: string }).id;
 
     state.user = { userId: 'user-b', email: 'b@example.test', displayName: 'B', fullName: 'B' };
     const otherLibrary = await getLibrary(new Request('http://localhost/api/library'));
     const otherData = (await otherLibrary.json()) as { voices: unknown[]; recordings: unknown[] };
     expect(otherData.voices).toHaveLength(0);
     expect(otherData.recordings).toHaveLength(0);
+    const forbiddenDelete = await deleteVoice(
+      new Request(`http://localhost/api/voices/${privateVoiceId}`, { method: 'DELETE' }),
+      { params: Promise.resolve({ id: privateVoiceId }) },
+    );
+    expect(forbiddenDelete.status).toBe(404);
 
     state.user = null;
     const anonymous = await getLibrary(new Request('http://localhost/api/library'));
