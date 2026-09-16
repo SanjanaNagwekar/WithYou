@@ -18,7 +18,7 @@ export default async function LandingPage() {
     <div className="landing-page">
       <header className="landing-header">
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand" href="/"><AudioLines /> WithYou<span>VOICE KEEPSAKES</span></a>
+        <a className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</a>
         <nav className="landing-nav" aria-label="Primary navigation">
           <a href="#how-it-works">How it works</a>
           <a href="#privacy">Privacy</a>

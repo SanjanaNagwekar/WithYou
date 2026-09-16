@@ -100,7 +100,7 @@ export function AuthForm({
       <section className="auth-story">
         {/* The Vinext development Link shim can load a second React copy after hot reload. */}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand" href="/"><AudioLines /> WithYou<span>VOICE KEEPSAKES</span></a>
+        <a className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</a>
         <div>
           <span className="eyebrow">A PRIVATE PLACE FOR FAMILIAR VOICES</span>
           <h1>Keep what matters.<br /><em>Come back anytime.</em></h1>

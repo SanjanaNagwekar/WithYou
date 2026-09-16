@@ -16,7 +16,7 @@ export default async function ResetPasswordPage({
     <main className="auth-page">
       <section className="auth-story">
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand" href="/"><AudioLines /> WithYou<span>VOICE KEEPSAKES</span></a>
+        <a className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</a>
         <div><span className="eyebrow">PRIVATE ACCOUNT RECOVERY</span><h1>Return to the voices<br /><em>that matter.</em></h1><p>Choose a new password for your private library.</p></div>
         <p className="auth-trust"><LockKeyhole size={15} /> Secure, one-time recovery link</p>
       </section>

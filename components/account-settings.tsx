@@ -114,7 +114,7 @@ export function AccountSettings({ user }: { user: AccountUser }) {
     <main className="account-page">
       <header className="account-header">
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand" href="/"><LockKeyhole /> WithYou<span>ACCOUNT</span></a>
+        <a className="brand" href="/" aria-label="WithYou home"><LockKeyhole /> WithYou</a>
         <a className="account-back" href="/studio"><ArrowLeft size={15} /> Back to library</a>
       </header>
 

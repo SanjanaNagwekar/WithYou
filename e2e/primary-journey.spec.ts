@@ -33,6 +33,22 @@ test('public landing guides visitors into the product', async ({ page }) => {
   await expect(page.getByText('Translation support is planned for a future phase.')).toBeVisible();
 });
 
+test('navigation stays focused between the landing page and private library', async ({ page }) => {
+  const studioHeader = page.getByRole('banner');
+  await expect(studioHeader.getByRole('link', { name: 'WithYou home' })).toHaveAttribute('href', '/');
+  await expect(studioHeader.getByText('PRIVATE STUDIO')).toHaveCount(0);
+  await expect(studioHeader.getByRole('link', { name: 'About WithYou' })).toHaveCount(0);
+
+  await studioHeader.getByRole('link', { name: 'WithYou home' }).click();
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('heading', { name: 'Keep the voices that feel like home.' })).toBeVisible();
+  const landingHeader = page.getByRole('banner');
+  await expect(landingHeader.getByText('VOICE KEEPSAKES')).toHaveCount(0);
+  await landingHeader.getByRole('link', { name: /Open library/ }).click();
+  await expect(page).toHaveURL('/studio');
+  await expect(page.getByRole('heading', { name: 'Voice profiles' })).toBeVisible();
+});
+
 test('user can preserve a voice and manage a generated keepsake', async ({ page }) => {
   await page.waitForLoadState('networkidle');
   await expect(page.getByRole('heading', { name: 'Voice profiles' })).toBeVisible();

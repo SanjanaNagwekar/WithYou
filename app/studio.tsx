@@ -374,10 +374,9 @@ export default function Home({ user }: { user: { displayName: string; email: str
     <div className="shell">
       <header className="studio-header">
         {/* vinext's development Link shim can load a second React copy after hot reload. */}
-        <a className="brand" href="/studio"><AudioLines /> WithYou<span>PRIVATE STUDIO</span></a>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</a>
         <div className="account-summary">
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a className="about-link" href="/">About WithYou</a>
           <span><LockKeyhole size={14} /><span><strong>{user.displayName}</strong><small>{user.email}</small></span></span>
           <a href="/account" aria-label="Account settings"><UserRound size={15} /></a>
           <button type="button" onClick={() => void signOut()} aria-label="Sign out"><LogOut size={15} /></button>
