@@ -1,7 +1,12 @@
 import { AppError } from '@/lib/errors';
 import type { ProviderEnvironment } from '@/lib/config';
-import type { CloneVoiceInput, VoiceProvider } from '@/lib/providers/voice-provider';
+import type {
+  CloneVoiceInput,
+  LocalizeVoiceInput,
+  VoiceProvider,
+} from '@/lib/providers/voice-provider';
 import type { DeliverySettings, Mood } from '@/lib/validation';
+import type { KeepsakeLanguage } from '@/lib/languages';
 
 const providerEmotion: Record<Mood, string | undefined> = {
   natural: undefined,
@@ -32,6 +37,25 @@ export class CartesiaVoiceProvider implements VoiceProvider {
     return clone.id;
   }
 
+  async localizeVoice(input: LocalizeVoiceInput): Promise<string> {
+    const response = await this.request('/voices/localize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        voice_id: input.providerVoiceId,
+        name: `${input.name} — ${input.language}`,
+        description: 'Private localized WithYou voice keepsake',
+        language: input.language,
+        original_speaker_gender: input.gender,
+      }),
+    });
+    const localized = (await response.json()) as { id?: string };
+    if (!localized.id) {
+      throw new AppError('The voice service returned an invalid localized voice.', 502);
+    }
+    return localized.id;
+  }
+
   async deleteVoice(providerVoiceId: string): Promise<void> {
     const response = await this.fetchImplementation(
       `https://api.cartesia.ai/voices/${encodeURIComponent(providerVoiceId)}`,
@@ -58,6 +82,7 @@ export class CartesiaVoiceProvider implements VoiceProvider {
     transcript: string,
     providerVoiceId: string,
     delivery: DeliverySettings,
+    language: KeepsakeLanguage,
   ): Promise<ArrayBuffer> {
     const emotion = providerEmotion[delivery.mood];
     const response = await this.request('/tts/bytes', {
@@ -67,7 +92,7 @@ export class CartesiaVoiceProvider implements VoiceProvider {
         model_id: this.config.CARTESIA_MODEL_ID,
         transcript,
         voice: { mode: 'id', id: providerVoiceId },
-        language: 'en',
+        language,
         generation_config: {
           speed: delivery.pace,
           volume: delivery.volume,
@@ -101,7 +126,12 @@ export class CartesiaVoiceProvider implements VoiceProvider {
         ? detail.error_code
         : 'unknown';
     console.error('Voice service rejected request', {
-      stage: path === '/voices/clone' ? 'cloning' : 'generation',
+      stage:
+        path === '/voices/clone'
+          ? 'cloning'
+          : path === '/voices/localize'
+            ? 'localization'
+            : 'generation',
       status: response.status,
       code,
     });
@@ -121,7 +151,7 @@ export class CartesiaVoiceProvider implements VoiceProvider {
       throw new AppError('The voice service has reached its usage limit. Please try again later.', 429);
     }
     throw new AppError(
-      `The voice service could not ${path === '/voices/clone' ? 'create a voice from this recording' : 'generate this audio'}. Please try again or contact the app owner.`,
+      `The voice service could not ${path === '/voices/clone' ? 'create a voice from this recording' : path === '/voices/localize' ? 'prepare this voice for the selected language' : 'generate this audio'}. Please try again or contact the app owner.`,
       502,
     );
   }

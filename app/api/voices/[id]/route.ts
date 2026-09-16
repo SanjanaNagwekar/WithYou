@@ -24,8 +24,17 @@ export async function DELETE(
       .bind(id, owner)
       .all<{ object_key: string }>();
 
-    if (voice.voice_id) {
-      await getVoiceProvider().deleteVoice(voice.voice_id);
+    const variants = await db
+      .prepare('SELECT provider_voice_id FROM voice_variants WHERE voice_id=? AND owner=?')
+      .bind(id, owner)
+      .all<{ provider_voice_id: string }>();
+
+    if (voice.voice_id || variants.results.length) {
+      const provider = getVoiceProvider();
+      for (const variant of variants.results) {
+        await provider.deleteVoice(variant.provider_voice_id);
+      }
+      if (voice.voice_id) await provider.deleteVoice(voice.voice_id);
     }
     const keys = objects.results.map((recording) => recording.object_key);
     for (let index = 0; index < keys.length; index += 1000) {
@@ -35,6 +44,7 @@ export async function DELETE(
     await db.batch([
       db.prepare('DELETE FROM generation_locks WHERE voice_id=?').bind(id),
       db.prepare('DELETE FROM generation_events WHERE voice_id=? AND owner=?').bind(id, owner),
+      db.prepare('DELETE FROM voice_variants WHERE voice_id=? AND owner=?').bind(id, owner),
       db.prepare('DELETE FROM recordings WHERE voice_id=? AND owner=?').bind(id, owner),
       db.prepare('DELETE FROM voices WHERE id=? AND owner=?').bind(id, owner),
     ]);

@@ -17,6 +17,12 @@ const providerEnvironmentSchema = z.object({
   WITHYOU_ALLOW_MOCK_PROVIDER: z.enum(['true', 'false']).default('false'),
 });
 
+const translationEnvironmentSchema = z.object({
+  GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON: optionalSecret,
+  WITHYOU_TRANSLATION_PROVIDER: z.enum(['google', 'mock']).default('google'),
+  WITHYOU_ALLOW_MOCK_TRANSLATION: z.enum(['true', 'false']).default('false'),
+});
+
 const optionalUrl = z.preprocess(
   (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
   z.string().trim().url().refine((value) => value.startsWith('http://') || value.startsWith('https://')).optional(),
@@ -55,6 +61,7 @@ const authEnvironmentSchema = z
   });
 
 export type ProviderEnvironment = z.infer<typeof providerEnvironmentSchema>;
+export type TranslationEnvironment = z.infer<typeof translationEnvironmentSchema>;
 export type AuthEnvironment = z.infer<typeof authEnvironmentSchema>;
 
 export function parseProviderEnvironment(input: Record<string, unknown>): ProviderEnvironment {
@@ -73,6 +80,28 @@ export function parseProviderEnvironment(input: Record<string, unknown>): Provid
     result.data.WITHYOU_ALLOW_MOCK_PROVIDER !== 'true'
   ) {
     throw new AppError('The mock voice provider must be explicitly enabled.', 503);
+  }
+  return result.data;
+}
+
+export function parseTranslationEnvironment(
+  input: Record<string, unknown>,
+): TranslationEnvironment {
+  const result = translationEnvironmentSchema.safeParse(input);
+  if (!result.success) {
+    const fields = [...new Set(result.error.issues.map((issue) => issue.path.join('.')))]
+      .filter(Boolean)
+      .join(', ');
+    throw new AppError(
+      `Translation provider configuration is invalid${fields ? `: ${fields}` : ''}.`,
+      503,
+    );
+  }
+  if (
+    result.data.WITHYOU_TRANSLATION_PROVIDER === 'mock' &&
+    result.data.WITHYOU_ALLOW_MOCK_TRANSLATION !== 'true'
+  ) {
+    throw new AppError('The mock translation provider must be explicitly enabled.', 503);
   }
   return result.data;
 }

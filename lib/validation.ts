@@ -1,4 +1,8 @@
 import { AppError } from '@/lib/errors';
+import {
+  isKeepsakeLanguage,
+  type LocalizationGender,
+} from '@/lib/languages';
 
 export const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
 export const MAX_REQUEST_BYTES = 16 * 1024 * 1024;
@@ -50,6 +54,8 @@ export function parseDelivery(value: {
 export function parseKeepsakeRequest(value: {
   text?: unknown;
   voiceId?: unknown;
+  targetLanguage?: unknown;
+  localizationGender?: unknown;
   mood?: unknown;
   pace?: unknown;
   volume?: unknown;
@@ -63,9 +69,23 @@ export function parseKeepsakeRequest(value: {
   ) {
     throw new AppError('Select a voice and enter between 1 and 1,000 characters.');
   }
+  const sourceText = value.text.trim();
+  const targetLanguage = value.targetLanguage ?? 'en';
+  if (!isKeepsakeLanguage(targetLanguage)) {
+    throw new AppError('Choose a supported keepsake language.');
+  }
+  let localizationGender: LocalizationGender | undefined;
+  if (targetLanguage !== 'en') {
+    if (value.localizationGender !== 'male' && value.localizationGender !== 'female') {
+      throw new AppError('Choose the voice type used to localize this voice.');
+    }
+    localizationGender = value.localizationGender;
+  }
   return {
-    transcript: value.text.trim(),
+    sourceText,
     voiceId: value.voiceId,
+    targetLanguage,
+    localizationGender,
     delivery: parseDelivery(value),
   };
 }

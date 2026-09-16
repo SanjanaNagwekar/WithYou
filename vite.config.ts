@@ -38,6 +38,9 @@ const localBindingConfig = {
     WITHYOU_VOICE_PROVIDER: process.env.WITHYOU_VOICE_PROVIDER || 'cartesia',
     WITHYOU_ALLOW_MOCK_PROVIDER: process.env.WITHYOU_ALLOW_MOCK_PROVIDER || 'false',
     CARTESIA_MODEL_ID: process.env.CARTESIA_MODEL_ID || 'sonic-3.6',
+    WITHYOU_TRANSLATION_PROVIDER: process.env.WITHYOU_TRANSLATION_PROVIDER || 'google',
+    WITHYOU_ALLOW_MOCK_TRANSLATION:
+      process.env.WITHYOU_ALLOW_MOCK_TRANSLATION || 'false',
     BETTER_AUTH_URL: isProductionDeployment
       ? production.url
       : process.env.BETTER_AUTH_URL || 'http://localhost:5173',
@@ -48,6 +51,7 @@ const localBindingConfig = {
       'BETTER_AUTH_SECRET',
       'GOOGLE_CLIENT_ID',
       'GOOGLE_CLIENT_SECRET',
+      'GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON',
     ],
   },
 };

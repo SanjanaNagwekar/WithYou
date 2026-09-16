@@ -105,14 +105,14 @@ export default async function LandingPage() {
 
         <section className="landing-roadmap">
           <div>
-            <span className="eyebrow">COMING NEXT</span>
+            <span className="eyebrow">ACROSS LANGUAGES</span>
             <h2>Familiar words, in more languages.</h2>
             <p>Choose a language for a keepsake while preserving the selected voice—designed for families whose memories cross borders and generations.</p>
           </div>
-          <div className="language-preview" aria-label="Planned language selection preview">
+          <div className="language-preview" aria-label="Language selection preview">
             <span>KEEPSAKE LANGUAGE</span>
             <strong>English <span>⌄</span></strong>
-            <p>Translation support is planned for a future phase.</p>
+            <p>Quality-gated translation keeps every supported language tied to a dedicated localized voice.</p>
           </div>
         </section>
 

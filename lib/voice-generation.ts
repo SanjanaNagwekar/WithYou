@@ -2,13 +2,15 @@ import { AppError } from '@/lib/errors';
 import { getVoiceProvider } from '@/lib/providers';
 export { parseDelivery } from '@/lib/validation';
 import type { DeliverySettings } from '@/lib/validation';
+import type { KeepsakeLanguage } from '@/lib/languages';
 
 export async function synthesizeKeepsake(
   transcript: string,
   providerVoiceId: string,
   delivery: DeliverySettings,
+  language: KeepsakeLanguage,
 ) {
-  return getVoiceProvider().synthesize(transcript, providerVoiceId, delivery);
+  return getVoiceProvider().synthesize(transcript, providerVoiceId, delivery, language);
 }
 
 export async function acquireGenerationLock(db: D1Database, voiceId: string) {

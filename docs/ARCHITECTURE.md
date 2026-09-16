@@ -48,7 +48,8 @@ The production topology uses one Cloudflare Worker, a D1 database for applicatio
 - `user`, `session`, `account`, and `verification`: account identities, password hashes/OAuth links, and expiring sessions or one-time challenges.
 - `authRateLimit`: database-backed request counters for authentication abuse protection.
 - `voices`: owner-scoped profiles, consent timestamp, and optional provider voice ID.
-- `recordings`: owner-scoped original or generated audio metadata and delivery settings.
+- `voice_variants`: owner-scoped, language-localized provider voice IDs derived from a profile's original clone.
+- `recordings`: owner-scoped original or generated audio metadata, source and translated text provenance, language, and delivery settings.
 - `generation_locks`: short-lived, per-voice concurrency protection.
 - `generation_events`: successful generation history used for daily quotas and auditing.
 
@@ -60,7 +61,7 @@ Deleting a voice is an owner-checked cascading application operation: it removes
 
 Email/password credentials use the authentication library's password hashing and are never stored in plaintext. Google access, refresh, and ID tokens are encrypted at rest with AES-256-GCM; a migration removes legacy plaintext provider tokens. Verification identifiers are hashed. Sessions expire after seven days, refresh at most daily, and use HTTP-only, same-site cookies that become secure-only in production. Sensitive operations require a session created within the last 15 minutes unless the user confirms their password. Google OAuth is enabled only when both provider credentials are present. Production also requires a high-entropy authentication secret and an explicit public base URL.
 
-Reference recordings and requested text are sent to the configured speech provider when generating. Provider credentials stay server-side. Mock mode requires a second explicit opt-in so an accidental environment-value change cannot silently enable it.
+Reference recordings and requested text are sent to the configured speech provider when generating. For multilingual keepsakes, the English source message is sent to Google Cloud Translation and the result is sent directly to the speech provider. Provider credentials stay server-side. Mock modes require separate explicit opt-ins so an accidental environment-value change cannot silently enable either one.
 
 The guided recorder uses the Web Audio API only inside the browser to measure microphone energy. Its adaptive noise threshold and faster pacing model are an activity-based guide rather than semantic transcription. After capture, the client mixes the signal to mono, trims leading and trailing silence, applies bounded level normalization and short edge fades, and encodes a 16-bit PCM WAV. It does not transcribe the prompt or send live microphone data to a speech-recognition service. Prepared bytes are uploaded only when the user explicitly saves the form.
 
@@ -70,10 +71,11 @@ The guided recorder uses the Web Audio API only inside the browser to measure mi
 2. Write routes reject cross-origin browser requests.
 3. Shared validators constrain text, files, consent, and delivery settings.
 4. Database queries include the owner boundary.
-5. Generation acquires a per-voice lock and checks the daily quota.
-6. The provider returns WAV bytes, which are stored in R2 before metadata is committed to D1.
-7. Updates regenerate the same logical keepsake and replace its audio object.
+5. For a multilingual request, the server translates the source text before any audio request is made.
+6. Generation acquires a per-voice lock, checks the daily quota, and resolves or creates the language-specific localized voice.
+7. The provider returns WAV bytes, which are stored in R2 before metadata is committed to D1.
+8. Updates regenerate the same logical keepsake with its language-specific voice and replace its audio object.
 
 ## Near-term extension points
 
-Translation, billing, asynchronous generation, provider benchmarking, and observability should enter through explicit adapters/services. Keep route handlers thin and preserve the current owner, validation, and provider boundaries when adding them.
+Billing, asynchronous generation, provider benchmarking, and observability should enter through explicit adapters/services. Translation already follows this pattern through a provider boundary. Keep route handlers thin and preserve the current owner, validation, and provider boundaries when adding them.

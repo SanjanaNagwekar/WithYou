@@ -1,19 +1,21 @@
 import { AppError, context, failure } from '@/lib/server';
 import { isVoiceProviderConfigured, voiceProviderMode } from '@/lib/providers';
+import { isTranslationProviderConfigured } from '@/lib/providers/translation';
 import { assertRequestSize, isValidAudioFile, normalizedAudioMime } from '@/lib/validation';
 
 export async function GET(request: Request) {
   try {
     const { db, owner } = await context(request);
     const [voices, recordings] = await Promise.all([
-      db.prepare('SELECT id,name,relationship,voice_id FROM voices WHERE owner=? ORDER BY created_at DESC').bind(owner).all(),
-      db.prepare('SELECT id,name,kind,transcript,voice_id,mood,pace,volume,updated_at,created_at FROM recordings WHERE owner=? ORDER BY created_at DESC').bind(owner).all(),
+      db.prepare('SELECT id,name,relationship,voice_id,localization_gender FROM voices WHERE owner=? ORDER BY created_at DESC').bind(owner).all(),
+      db.prepare('SELECT id,name,kind,transcript,source_transcript,source_language,target_language,translation_edited,voice_id,mood,pace,volume,updated_at,created_at FROM recordings WHERE owner=? ORDER BY created_at DESC').bind(owner).all(),
     ]);
     return Response.json(
       {
         voices: voices.results,
         recordings: recordings.results,
         configured: isVoiceProviderConfigured(),
+        translationConfigured: isTranslationProviderConfigured(),
         providerMode: voiceProviderMode(),
       },
       { headers: { 'Cache-Control': 'no-store' } },

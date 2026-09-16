@@ -30,7 +30,7 @@ test('public landing guides visitors into the product', async ({ page }) => {
     '/sign-in?return_to=%2Fstudio',
   );
   await expect(page.getByRole('heading', { name: 'From a recording to something you can hold onto.' })).toBeVisible();
-  await expect(page.getByText('Translation support is planned for a future phase.')).toBeVisible();
+  await expect(page.getByText(/Quality-gated translation/)).toBeVisible();
 });
 
 test('navigation stays focused between the landing page and private library', async ({ page }) => {
@@ -96,6 +96,16 @@ test('user can preserve a voice and manage a generated keepsake', async ({ page 
   await page.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Keepsake deleted.');
   await expect(keepsakeHeading).toHaveCount(0);
+
+  await page.getByLabel('YOUR WORDS').fill('You are loved, always.');
+  await page.getByLabel('LANGUAGE', { exact: true }).selectOption('es');
+  await page.getByLabel('VOICE TYPE').selectOption('female');
+  await page.getByRole('button', { name: 'Create audio' }).click();
+  await expect(page.getByRole('status')).toContainText('Your Spanish keepsake is ready.');
+  await expect(
+    page.getByRole('heading', { name: 'Siempre eres una persona amada.' }),
+  ).toBeVisible();
+  await expect(page.getByText(/Spanish.*Warm.*pace.*volume/)).toBeVisible();
 
   await page.getByRole('tab', { name: /Voice recordings/ }).click();
   await expect(page.getByText('ORIGINAL AUDIO ONLY')).toBeVisible();

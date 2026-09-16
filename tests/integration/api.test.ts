@@ -38,6 +38,8 @@ describe('recording API lifecycle', () => {
       CARTESIA_MODEL_ID: 'sonic-3.6',
       WITHYOU_VOICE_PROVIDER: 'mock',
       WITHYOU_ALLOW_MOCK_PROVIDER: 'true',
+      WITHYOU_TRANSLATION_PROVIDER: 'mock',
+      WITHYOU_ALLOW_MOCK_TRANSLATION: 'true',
     });
     state.user = {
       userId: 'user-a',
@@ -159,6 +161,55 @@ describe('recording API lifecycle', () => {
     state.user = null;
     const anonymous = await getLibrary(new Request('http://localhost/api/library'));
     expect(anonymous.status).toBe(401);
+  });
+
+  it('translates, localizes, and persists multilingual keepsake provenance', async () => {
+    const form = new FormData();
+    form.set('name', 'Mom');
+    form.set('relationship', 'Mother');
+    form.set('consent', 'yes');
+    form.set('audio', audioFixture());
+    const created = await createVoice(
+      new Request('http://localhost/api/library', { method: 'POST', body: form }),
+    );
+    const voiceId = ((await created.json()) as { id: string }).id;
+
+    const generated = await generateKeepsake(
+      new Request('http://localhost/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: 'You are loved, always.',
+          voiceId,
+          targetLanguage: 'es',
+          localizationGender: 'female',
+          mood: 'warm',
+          pace: 1,
+          volume: 1,
+        }),
+      }),
+    );
+    expect(generated.status).toBe(201);
+    const recordingId = ((await generated.json()) as { id: string }).id;
+
+    const recording = await db
+      .prepare(
+        'SELECT transcript,source_transcript,target_language,translation_provider FROM recordings WHERE id=?',
+      )
+      .bind(recordingId)
+      .first<Record<string, string>>();
+    expect(recording).toMatchObject({
+      transcript: 'Siempre eres una persona amada.',
+      source_transcript: 'You are loved, always.',
+      target_language: 'es',
+      translation_provider: 'mock',
+    });
+    expect(
+      await db
+        .prepare('SELECT language FROM voice_variants WHERE voice_id=?')
+        .bind(voiceId)
+        .first(),
+    ).toMatchObject({ language: 'es' });
   });
 
   it('rejects cross-origin writes before changing storage', async () => {

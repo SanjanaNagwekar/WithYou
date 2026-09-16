@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseAuthEnvironment, parseProviderEnvironment } from '@/lib/config';
+import {
+  parseAuthEnvironment,
+  parseProviderEnvironment,
+  parseTranslationEnvironment,
+} from '@/lib/config';
 import { AppError } from '@/lib/errors';
 
 describe('parseProviderEnvironment', () => {
@@ -54,6 +58,28 @@ describe('parseProviderEnvironment', () => {
     } catch (error) {
       expect(String(error)).not.toContain('private-value');
     }
+  });
+});
+
+describe('parseTranslationEnvironment', () => {
+  it('defaults to Google and treats an empty credential as unconfigured', () => {
+    expect(parseTranslationEnvironment({ GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON: '' })).toEqual({
+      GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON: undefined,
+      WITHYOU_TRANSLATION_PROVIDER: 'google',
+      WITHYOU_ALLOW_MOCK_TRANSLATION: 'false',
+    });
+  });
+
+  it('requires an explicit safeguard before enabling mock translation', () => {
+    expect(() =>
+      parseTranslationEnvironment({ WITHYOU_TRANSLATION_PROVIDER: 'mock' }),
+    ).toThrow('The mock translation provider must be explicitly enabled.');
+    expect(
+      parseTranslationEnvironment({
+        WITHYOU_TRANSLATION_PROVIDER: 'mock',
+        WITHYOU_ALLOW_MOCK_TRANSLATION: 'true',
+      }).WITHYOU_TRANSLATION_PROVIDER,
+    ).toBe('mock');
   });
 });
 

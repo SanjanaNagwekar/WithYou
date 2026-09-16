@@ -5,6 +5,9 @@ declare namespace Cloudflare {
     CARTESIA_MODEL_ID?: string;
     WITHYOU_VOICE_PROVIDER?: string;
     WITHYOU_ALLOW_MOCK_PROVIDER?: string;
+    WITHYOU_TRANSLATION_PROVIDER?: string;
+    WITHYOU_ALLOW_MOCK_TRANSLATION?: string;
+    GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON?: string;
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
     GOOGLE_CLIENT_ID?: string;

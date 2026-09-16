@@ -12,6 +12,7 @@ import {
   Plus,
   RefreshCw,
   SlidersHorizontal,
+  Languages,
   Trash2,
   UserRound,
   WandSparkles,
@@ -40,14 +41,27 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VoiceRecorder } from '@/components/voice-recorder';
 import { authClient } from '@/lib/auth-client';
+import {
+  keepsakeLanguageName,
+  keepsakeLanguages,
+  type KeepsakeLanguage,
+  type LocalizationGender,
+} from '@/lib/languages';
 
-type Voice = { id: string; name: string; relationship: string; voice_id: string | null };
+type Voice = {
+  id: string;
+  name: string;
+  relationship: string;
+  voice_id: string | null;
+  localization_gender: LocalizationGender | null;
+};
 type LibraryResponse = {
   error?: string;
   id?: string;
   voices: Voice[];
   recordings: Recording[];
   configured: boolean;
+  translationConfigured: boolean;
 };
 
 const moodOptions = [
@@ -60,7 +74,13 @@ const moodOptions = [
 ] as const;
 
 type Mood = (typeof moodOptions)[number]['value'];
-type BusyAction = 'create' | 'replace' | 'record' | 'generate' | 'delete-voice' | null;
+type BusyAction =
+  | 'create'
+  | 'replace'
+  | 'record'
+  | 'generate'
+  | 'delete-voice'
+  | null;
 
 function messageFrom(error: unknown) {
   return error instanceof Error ? error.message : 'We could not complete that request.';
@@ -86,6 +106,11 @@ export default function Home({ user }: { user: { displayName: string; email: str
   const [text, setText] = useState('');
   const [tab, setTab] = useState('keepsakes');
   const [ready, setReady] = useState(false);
+  const [translationReady, setTranslationReady] = useState(false);
+  const [targetLanguage, setTargetLanguage] = useState<KeepsakeLanguage>('en');
+  const [localizationChoices, setLocalizationChoices] = useState<
+    Record<string, LocalizationGender>
+  >({});
   const [mood, setMood] = useState<Mood>('natural');
   const [pace, setPace] = useState([1]);
   const [volume, setVolume] = useState([1]);
@@ -116,6 +141,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
     return counts;
   }, [recordings]);
   const moodDescription = moodOptions.find((option) => option.value === mood)?.description ?? '';
+  const localizationGender = selectedVoice?.localization_gender || localizationChoices[selected] || '';
 
   async function refresh() {
     try {
@@ -125,6 +151,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
       setVoices(data.voices);
       setRecordings(data.recordings);
       setReady(data.configured);
+      setTranslationReady(data.translationConfigured);
       setSelected((current) =>
         data.voices.some((voice) => voice.id === current) ? current : data.voices[0]?.id || '',
       );
@@ -322,16 +349,31 @@ export default function Home({ user }: { user: { displayName: string; email: str
     startAction();
     setBusy('generate');
     try {
+      if (targetLanguage !== 'en' && !localizationGender) {
+        throw new Error('Choose the voice type used for localization.');
+      }
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voiceId: selected, text, mood, pace: pace[0], volume: volume[0] }),
+        body: JSON.stringify({
+          voiceId: selected,
+          text: text.trim(),
+          targetLanguage,
+          localizationGender: targetLanguage === 'en' ? undefined : localizationGender,
+          mood,
+          pace: pace[0],
+          volume: volume[0],
+        }),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error || 'The keepsake could not be created.');
       await refresh();
       setTab('keepsakes');
-      setStatus('Your new keepsake is ready.');
+      setStatus(
+        targetLanguage === 'en'
+          ? 'Your new keepsake is ready.'
+          : `Your ${keepsakeLanguageName(targetLanguage)} keepsake is ready.`,
+      );
     } catch (caught) {
       setError(messageFrom(caught));
     } finally {
@@ -446,6 +488,64 @@ export default function Home({ user }: { user: { displayName: string; email: str
                   {['I love you, always.', 'I’m so proud of you.', 'Take it one day at a time.'].map((suggestion) => <button key={suggestion} onClick={() => setText(suggestion)}>{suggestion}</button>)}
                 </div>
 
+                <section className="language-panel" aria-labelledby="language-heading">
+                  <div className="language-panel-heading">
+                    <span className="delivery-icon"><Languages size={17} /></span>
+                    <div>
+                      <h3 id="language-heading">Keepsake language</h3>
+                      <p>Your words are translated automatically, then spoken with a voice localized for that language.</p>
+                    </div>
+                  </div>
+                  <div className="language-controls">
+                    <label htmlFor="target-language">LANGUAGE</label>
+                    <div className="select-wrap">
+                      <select
+                        id="target-language"
+                        value={targetLanguage}
+                        onChange={(event) => setTargetLanguage(event.target.value as KeepsakeLanguage)}
+                        disabled={busy !== null}
+                      >
+                        {keepsakeLanguages.map((language) => (
+                          <option key={language.code} value={language.code}>
+                            {language.name}{language.code === 'en' ? ' — original' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {targetLanguage !== 'en' && !translationReady && (
+                    <p className="setup-note">Translation is ready in the product but still needs its private Google Cloud credential.</p>
+                  )}
+
+                  {targetLanguage !== 'en' && !selectedVoice.localization_gender && (
+                    <div className="localization-voice-type">
+                      <div>
+                        <label htmlFor="localization-gender">VOICE TYPE</label>
+                        <p>Cartesia uses this once to preserve the voice while localizing pronunciation.</p>
+                      </div>
+                      <div className="select-wrap">
+                        <select
+                          id="localization-gender"
+                          value={localizationGender}
+                          onChange={(event) =>
+                            setLocalizationChoices((current) => ({
+                              ...current,
+                              [selected]: event.target.value as LocalizationGender,
+                            }))
+                          }
+                          disabled={busy !== null}
+                        >
+                          <option value="">Choose voice type</option>
+                          <option value="female">Feminine</option>
+                          <option value="male">Masculine</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  <p className="quality-note"><LockKeyhole size={13} /> Only languages with dedicated voice localization are offered, so similarity is prioritized over language count.</p>
+                </section>
+
                 <section className="delivery-panel" aria-labelledby="delivery-heading">
                   <div className="delivery-header"><span className="delivery-icon"><SlidersHorizontal size={17} /></span><div><h3 id="delivery-heading">Voice delivery</h3><p>Shape how this keepsake feels and sounds.</p></div></div>
                   <div className="delivery-grid">
@@ -481,7 +581,17 @@ export default function Home({ user }: { user: { displayName: string; email: str
 
                 <div className="generate-row">
                   <p><LockKeyhole size={14} /> Just for you. Yours to download.</p>
-                  <button className="primary" disabled={busy !== null || !selected || !text.trim() || !ready} onClick={() => void generate()}><WandSparkles size={16} />{busy === 'generate' ? 'Creating…' : 'Create audio'}</button>
+                  <button
+                    className="primary"
+                    disabled={
+                      busy !== null ||
+                      !selected ||
+                      !text.trim() ||
+                      !ready ||
+                      (targetLanguage !== 'en' && (!translationReady || !localizationGender))
+                    }
+                    onClick={() => void generate()}
+                  ><WandSparkles size={16} />{busy === 'generate' ? (targetLanguage === 'en' ? 'Creating…' : 'Translating & creating…') : 'Create audio'}</button>
                 </div>
                 {!ready && <p className="setup-note">Voice generation is not available yet. You can start preserving recordings now.</p>}
                 </section>

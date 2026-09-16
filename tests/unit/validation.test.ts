@@ -46,8 +46,10 @@ describe('keepsake request validation', () => {
         volume: 0.9,
       }),
     ).toEqual({
-      transcript: 'I am proud of you.',
+      sourceText: 'I am proud of you.',
       voiceId: 'voice-1',
+      targetLanguage: 'en',
+      localizationGender: undefined,
       delivery: { mood: 'proud', pace: 1.1, volume: 0.9 },
     });
   });
@@ -62,6 +64,33 @@ describe('keepsake request validation', () => {
     expect(() =>
       parseKeepsakeRequest({ ...input, mood: 'natural', pace: 1, volume: 1 }),
     ).toThrow('Select a voice and enter between 1 and 1,000 characters.');
+  });
+
+  it('accepts a localized keepsake and rejects missing localization settings', () => {
+    expect(
+      parseKeepsakeRequest({
+        text: 'Siempre eres una persona amada.',
+        voiceId: 'voice-1',
+        targetLanguage: 'es',
+        localizationGender: 'female',
+        mood: 'warm',
+        pace: 1,
+        volume: 1,
+      }),
+    ).toMatchObject({
+      targetLanguage: 'es',
+      localizationGender: 'female',
+    });
+    expect(() =>
+      parseKeepsakeRequest({
+        text: 'Hola',
+        voiceId: 'voice-1',
+        targetLanguage: 'es',
+        mood: 'natural',
+        pace: 1,
+        volume: 1,
+      }),
+    ).toThrow('Choose the voice type used to localize this voice.');
   });
 });
 

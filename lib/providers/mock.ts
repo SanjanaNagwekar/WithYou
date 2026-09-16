@@ -1,9 +1,14 @@
-import type { CloneVoiceInput, VoiceProvider } from '@/lib/providers/voice-provider';
+import type { CloneVoiceInput, LocalizeVoiceInput, VoiceProvider } from '@/lib/providers/voice-provider';
 import type { DeliverySettings } from '@/lib/validation';
+import type { KeepsakeLanguage } from '@/lib/languages';
 
 export class MockVoiceProvider implements VoiceProvider {
   async cloneVoice(input: CloneVoiceInput): Promise<string> {
     return `mock-${stableHash(`${input.name}:${input.fileName}:${input.audio.byteLength}`)}`;
+  }
+
+  async localizeVoice(input: LocalizeVoiceInput): Promise<string> {
+    return `mock-localized-${input.language}-${stableHash(`${input.providerVoiceId}:${input.gender}`)}`;
   }
 
   async deleteVoice(): Promise<void> {}
@@ -12,6 +17,7 @@ export class MockVoiceProvider implements VoiceProvider {
     transcript: string,
     providerVoiceId: string,
     delivery: DeliverySettings,
+    language: KeepsakeLanguage,
   ): Promise<ArrayBuffer> {
     const sampleRate = 8000;
     const seconds = Math.max(0.2, Math.min(1, transcript.length / 100));
@@ -32,7 +38,7 @@ export class MockVoiceProvider implements VoiceProvider {
     writeAscii(view, 36, 'data');
     view.setUint32(40, dataSize, true);
 
-    const frequency = 220 + (stableHash(`${providerVoiceId}:${delivery.mood}`) % 220);
+    const frequency = 220 + (stableHash(`${providerVoiceId}:${delivery.mood}:${language}`) % 220);
     const amplitude = Math.min(0.25, 0.12 * delivery.volume);
     for (let index = 0; index < sampleCount; index += 1) {
       const time = index / sampleRate;

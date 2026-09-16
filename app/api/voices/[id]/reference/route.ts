@@ -1,5 +1,6 @@
 import { AppError, context, failure } from '@/lib/server';
 import { assertRequestSize, isValidAudioFile, normalizedAudioMime } from '@/lib/validation';
+import { getVoiceProvider } from '@/lib/providers';
 
 export async function POST(
   request: Request,
@@ -11,9 +12,9 @@ export async function POST(
 
     const { id } = await params;
     const voice = await db
-      .prepare('SELECT id FROM voices WHERE id=? AND owner=?')
+      .prepare('SELECT id,voice_id FROM voices WHERE id=? AND owner=?')
       .bind(id, owner)
-      .first();
+      .first<{ id: string; voice_id: string | null }>();
     if (!voice) throw new AppError('Voice not found.', 404);
 
     const data = await request.formData();
@@ -34,8 +35,20 @@ export async function POST(
     });
 
     try {
+      const variants = await db
+        .prepare('SELECT provider_voice_id FROM voice_variants WHERE voice_id=? AND owner=?')
+        .bind(id, owner)
+        .all<{ provider_voice_id: string }>();
+      if (voice.voice_id || variants.results.length) {
+        const provider = getVoiceProvider();
+        for (const variant of variants.results) {
+          await provider.deleteVoice(variant.provider_voice_id);
+        }
+        if (voice.voice_id) await provider.deleteVoice(voice.voice_id);
+      }
       await db.batch([
         db.prepare('UPDATE voices SET voice_id=NULL WHERE id=? AND owner=?').bind(id, owner),
+        db.prepare('DELETE FROM voice_variants WHERE voice_id=? AND owner=?').bind(id, owner),
         db.prepare('INSERT INTO recordings(id,owner,voice_id,name,kind,object_key,mime,transcript,created_at) VALUES(?,?,?,?,?,?,?,?,?)')
           .bind(recordingId, owner, id, audio.name.slice(0, 150), 'original', objectKey, mime, '', now),
       ]);

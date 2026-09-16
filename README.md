@@ -17,6 +17,7 @@ The current portfolio MVP runs on Cloudflare Workers with D1 metadata, private R
 - Enable email verification and password recovery through optional server-side email delivery.
 - Organize each person as a voice profile with separate original-audio management, keepsake creation, and recent generated keepsakes.
 - Generate a WAV keepsake through Cartesia or a deterministic local mock.
+- Translate English keepsake text into a quality-gated set of 15 languages and synthesize it with a cached language-localized version of the selected voice.
 - Change delivery settings without creating a second keepsake record.
 - Remove an individual recording or permanently remove a voice profile with all associated recordings, keepsakes, stored audio, and provider clones.
 - Enforce per-owner access, same-origin writes, daily generation limits, and per-voice generation locks.
@@ -35,6 +36,7 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_bizarre_cardiac.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_dark_thunderball.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_auth_rate_limits.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0004_low_molly_hayes.sql
 npm run dev
 ```
 
@@ -53,12 +55,14 @@ Open `http://localhost:5173`, create an account, and sign in. Development uses a
 
 To enable live voice generation, add `CARTESIA_API_KEY` to `.env`. The browser never receives this secret. Without it, original recordings can still be uploaded, played, downloaded, and deleted.
 
+To enable multilingual keepsakes, add the complete Google Cloud Translation service-account JSON as `GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON`. Translation runs only on the server. The production setup and quality constraints are documented in [Multilingual keepsakes](docs/MULTILINGUAL.md).
+
 ## Safe demo data
 
 The deterministic mock provider is limited to environments that explicitly opt in. Start a local server with both controls enabled, then seed it:
 
 ```bash
-WITHYOU_VOICE_PROVIDER=mock WITHYOU_ALLOW_MOCK_PROVIDER=true npm run dev
+WITHYOU_VOICE_PROVIDER=mock WITHYOU_ALLOW_MOCK_PROVIDER=true WITHYOU_TRANSLATION_PROVIDER=mock WITHYOU_ALLOW_MOCK_TRANSLATION=true npm run dev
 npm run seed
 ```
 
@@ -72,6 +76,9 @@ The seed command is idempotent and refuses to run against Cartesia. Do not enabl
 | `CARTESIA_MODEL_ID` | No | Cartesia model; defaults to `sonic-3.6`. |
 | `WITHYOU_VOICE_PROVIDER` | No | `cartesia` by default; `mock` for controlled demos/tests. |
 | `WITHYOU_ALLOW_MOCK_PROVIDER` | For mock mode | Must be `true` before mock generation is allowed. |
+| `GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON` | For live translation | Complete server-side Google Cloud service-account credential JSON for Translation Advanced v3. |
+| `WITHYOU_TRANSLATION_PROVIDER` | No | `google` by default; `mock` for controlled demos/tests. |
+| `WITHYOU_ALLOW_MOCK_TRANSLATION` | For mock translation | Must be `true` before deterministic mock translations are allowed. |
 | `BETTER_AUTH_SECRET` | Production | High-entropy secret of at least 32 characters used to protect sessions. |
 | `BETTER_AUTH_URL` | Production | Public application origin, such as `https://withyou.example`. |
 | `GOOGLE_CLIENT_ID` | For Google sign-in | Google OAuth web client ID. Must be set with its client secret. |

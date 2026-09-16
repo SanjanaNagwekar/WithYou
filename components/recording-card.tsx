@@ -14,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Slider } from '@/components/ui/slider';
+import { isKeepsakeLanguage, keepsakeLanguageName } from '@/lib/languages';
 
 const moodOptions = [
   { value: 'natural', label: 'Natural', description: 'Let the words guide the delivery' },
@@ -31,6 +32,10 @@ export type Recording = {
   name: string;
   kind: string;
   transcript: string;
+  source_transcript?: string;
+  source_language?: string;
+  target_language?: string;
+  translation_edited?: boolean;
   voice_id: string;
   mood?: Mood;
   pace?: number;
@@ -65,6 +70,9 @@ export function RecordingCard({ recording, generationReady, onChanged, contextLa
   const moodDescription =
     moodOptions.find((option) => option.value === mood)?.description || '';
   const audioVersion = recording.updated_at || recording.created_at || recording.id;
+  const language = isKeepsakeLanguage(recording.target_language)
+    ? keepsakeLanguageName(recording.target_language)
+    : 'English';
 
   async function deleteRecording() {
     setIssue('');
@@ -114,9 +122,16 @@ export function RecordingCard({ recording, generationReady, onChanged, contextLa
           {recording.transcript && <p>{recording.transcript}</p>}
           {generated && (
             <span className="delivery-summary">
+              {language} ·{' '}
               {moodOptions.find((option) => option.value === savedMood)?.label || 'Natural'}
               {' · '}{savedPace.toFixed(2)}× pace · {savedVolume.toFixed(2)}× volume
             </span>
+          )}
+          {generated && recording.target_language && recording.target_language !== 'en' && recording.source_transcript && (
+            <details className="original-message">
+              <summary>View original English message</summary>
+              <p>{recording.source_transcript}</p>
+            </details>
           )}
         </div>
         <div className="recording-actions">

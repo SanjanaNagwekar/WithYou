@@ -19,7 +19,7 @@ describe('CartesiaVoiceProvider', () => {
         mood: 'warm',
         pace: 1.2,
         volume: 0.8,
-      }),
+      }, 'es'),
     ).resolves.toBeInstanceOf(ArrayBuffer);
 
     const [url, init] = fetchMock.mock.calls[0];
@@ -33,6 +33,7 @@ describe('CartesiaVoiceProvider', () => {
       transcript: 'Hello',
       voice: { mode: 'id', id: 'provider-voice' },
       generation_config: { speed: 1.2, volume: 0.8, emotion: 'affectionate' },
+      language: 'es',
     });
   });
 
@@ -47,6 +48,28 @@ describe('CartesiaVoiceProvider', () => {
         name: 'Sample voice',
       }),
     ).resolves.toBe('clone-123');
+  });
+
+  it('creates a dedicated localized voice', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ id: 'localized-123' }));
+    const provider = new CartesiaVoiceProvider(config, fetchMock as typeof fetch);
+
+    await expect(
+      provider.localizeVoice({
+        providerVoiceId: 'clone-123',
+        language: 'fr',
+        gender: 'female',
+        name: 'Sample voice',
+      }),
+    ).resolves.toBe('localized-123');
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://api.cartesia.ai/voices/localize');
+    expect(JSON.parse(init.body)).toMatchObject({
+      voice_id: 'clone-123',
+      language: 'fr',
+      original_speaker_gender: 'female',
+    });
   });
 
   it('deletes a cloned provider voice and treats an already missing voice as deleted', async () => {
@@ -84,7 +107,7 @@ describe('CartesiaVoiceProvider', () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json(body, { status }));
     const provider = new CartesiaVoiceProvider(config, fetchMock as typeof fetch);
     const error = await provider
-      .synthesize('Hello', 'voice', { mood: 'natural', pace: 1, volume: 1 })
+      .synthesize('Hello', 'voice', { mood: 'natural', pace: 1, volume: 1 }, 'en')
       .catch((caught) => caught);
     expect(error).toBeInstanceOf(AppError);
     expect(error.status).toBe(expectedStatus);
