@@ -22,6 +22,8 @@ VoiceProvider interface
   +-- deterministic mock (test/demo only)
 ```
 
+The production topology uses one Cloudflare Worker, a D1 database for application and authentication metadata, and a private R2 bucket for audio objects. The deployed portfolio application is available at `https://withyou.sanjana-nagwekar.workers.dev`; secrets remain encrypted Worker configuration and are not stored in the repository.
+
 ## Boundaries and responsibilities
 
 - `app/page.tsx` is the public product landing page and adapts its primary action for signed-in visitors.

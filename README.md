@@ -2,6 +2,12 @@
 
 WithYou is a private voice-keepsake application with a public product landing page and an authenticated personal studio. It preserves consented reference recordings, stores original memories, and creates clearly labeled synthetic keepsakes through a configurable speech provider. A keepsake can be replayed, downloaded, deleted, or regenerated in place with a different feeling, pace, and volume.
 
+## Live application
+
+**[Open WithYou](https://withyou.sanjana-nagwekar.workers.dev)**
+
+The current portfolio MVP runs on Cloudflare Workers with D1 metadata, private R2 audio storage, Google and email/password authentication, and Cartesia voice generation. The public landing page is available without an account; recordings and generated keepsakes are restricted to the signed-in owner.
+
 ## Current capabilities
 
 - Create a voice profile from an uploaded file or a guided browser recording with responsive local activity feedback, silence trimming, level normalization, and voice-ready PCM WAV output.
@@ -34,7 +40,7 @@ npm run dev
 
 ## Production deployment
 
-The production Cloudflare resource identifiers live in `deployment.json`. Build and deploy with:
+The production application is available at `https://withyou.sanjana-nagwekar.workers.dev`. Cloudflare resource identifiers live in `deployment.json`. Build and deploy with:
 
 ```bash
 npm run deploy:production
