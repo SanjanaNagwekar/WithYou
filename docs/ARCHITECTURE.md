@@ -24,6 +24,8 @@ VoiceProvider interface
 
 ## Boundaries and responsibilities
 
+- `app/page.tsx` is the public product landing page and adapts its primary action for signed-in visitors.
+- `app/studio/page.tsx` is the authenticated server boundary for the private library.
 - `app/studio.tsx` owns the interactive client experience and calls server routes.
 - `app/sign-in/**`, `app/reset-password/**`, and the authentication form components own account creation, sign-in, verification, and recovery UI.
 - `app/account/**` and `components/account-settings.tsx` own profile, password, session, and account-deletion controls.

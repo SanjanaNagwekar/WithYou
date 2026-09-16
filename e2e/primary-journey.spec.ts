@@ -7,7 +7,11 @@ const wav = Buffer.from([
 ]);
 
 test.beforeEach(async ({ page }, testInfo) => {
-  await page.goto('/');
+  if (testInfo.title === 'public landing guides visitors into the product') {
+    await page.goto('/');
+    return;
+  }
+  await page.goto('/studio');
   await expect(page).toHaveURL(/\/sign-in/);
   await page.getByRole('button', { name: 'Create an account' }).click();
   await page.getByLabel('YOUR NAME').fill('E2E User');
@@ -16,7 +20,17 @@ test.beforeEach(async ({ page }, testInfo) => {
     .fill(`e2e-${Date.now()}-${testInfo.workerIndex}-${testInfo.retry}-${testInfo.title.replace(/\W/g, '-')}@example.test`);
   await page.getByLabel('PASSWORD').fill('secure-test-password');
   await page.getByRole('button', { name: 'Create account', exact: true }).click();
-  await expect(page).toHaveURL('/');
+  await expect(page).toHaveURL('/studio');
+});
+
+test('public landing guides visitors into the product', async ({ page }) => {
+  await expect(page.getByRole('heading', { name: 'Keep the voices that feel like home.' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Create your private library' }).first()).toHaveAttribute(
+    'href',
+    '/sign-in?return_to=%2Fstudio',
+  );
+  await expect(page.getByRole('heading', { name: 'From a recording to something you can hold onto.' })).toBeVisible();
+  await expect(page.getByText('Translation support is planned for a future phase.')).toBeVisible();
 });
 
 test('user can preserve a voice and manage a generated keepsake', async ({ page }) => {
@@ -80,7 +94,7 @@ test('user can update profile and secure other sessions', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText('Other devices have been signed out.');
 
   await page.getByRole('link', { name: 'Back to library' }).click();
-  await expect(page).toHaveURL('/');
+  await expect(page).toHaveURL('/studio');
   await expect(page.getByText('Updated E2E User')).toBeVisible();
 
   await page.getByRole('button', { name: 'Preserve a voice' }).click();

@@ -349,7 +349,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
 
   async function signOut() {
     await authClient.signOut();
-    router.replace('/sign-in');
+    router.replace('/');
     router.refresh();
   }
 

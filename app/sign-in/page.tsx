@@ -15,7 +15,7 @@ export default async function SignInPage({
   }>;
 }) {
   const parameters = await searchParams;
-  const returnTo = safeReturnPath(parameters.return_to || '/');
+  const returnTo = safeReturnPath(parameters.return_to || '/studio');
   if (await getAuthenticatedUser()) redirect(returnTo);
   const initialNotice = parameters.password_reset
     ? 'Your password has been reset. Sign in with your new password.'

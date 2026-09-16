@@ -53,13 +53,13 @@ export async function requireAuthenticatedUser(
 }
 
 export function safeReturnPath(value: string): string {
-  if (!value.startsWith('/') || value.startsWith('//')) return '/';
+  if (!value.startsWith('/') || value.startsWith('//')) return '/studio';
   try {
     const url = new URL(value, 'https://withyou.local');
-    if (url.origin !== 'https://withyou.local' || url.pathname === '/sign-in') return '/';
+    if (url.origin !== 'https://withyou.local' || url.pathname === '/sign-in') return '/studio';
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
-    return '/';
+    return '/studio';
   }
 }
 
