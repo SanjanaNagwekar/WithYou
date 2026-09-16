@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Static analysis | `npm run lint` | ESLint rules and common implementation mistakes. |
 | Type safety | `npm run typecheck` | TypeScript without emitting build files. |
-| Unit | `npm run test:coverage` | Validation, environment configuration, and provider behavior. |
+| Unit | `npm run test:coverage` | Validation, environment configuration, provider behavior, and PCM voice-sample preparation. |
 | API integration | `npm run test:integration` | Real auth/app route handlers against temporary isolated D1 and R2 resources. |
 | Browser | `npm run test:e2e` | Account creation, account settings, guided recording UI, voice deletion, desktop primary journey, and mobile control smoke test in Chromium. |
 | Production build | `npm run build` | Complete Vinext build and route compilation. |

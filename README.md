@@ -4,7 +4,7 @@ WithYou is a private voice-keepsake application. It preserves consented referenc
 
 ## Current capabilities
 
-- Create a voice profile from an uploaded file or a guided browser recording with local voice-activity feedback and automatic completion.
+- Create a voice profile from an uploaded file or a guided browser recording with responsive local activity feedback, silence trimming, level normalization, and voice-ready PCM WAV output.
 - Create an account with email and password, sign in with a secure session, and sign out.
 - Sign in with Google and safely link a verified Google identity to the same account.
 - Update a profile, change a password, revoke other sessions, and delete an account with all owned data.

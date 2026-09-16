@@ -2,15 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Circle, Mic, RotateCcw, Square, Volume2 } from 'lucide-react';
+import { encodePcmWav, prepareVoicePcm } from '@/lib/audio-processing';
 
 export const guidedVoicePrompt =
-  'Every morning, I open the window and listen as the world wakes up. The light feels warm, the air is calm, and I remember that even ordinary moments can become wonderful memories worth holding close.';
+  'Every morning, I open the window, breathe in slowly, and smile. The world feels peaceful, hopeful, and full of little moments worth remembering.';
 
 const promptWords = guidedVoicePrompt.split(' ');
-const targetSpeakingMs = (promptWords.length / 2.2) * 1000;
+const targetSpeakingMs = (promptWords.length / 2.65) * 1000;
 const maximumRecordingMs = 60 * 1000;
-const finishingSilenceMs = 1200;
-const voiceThreshold = 0.025;
+const finishingSilenceMs = 1500;
+const minimumVoiceThreshold = 0.009;
 
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
@@ -27,13 +28,6 @@ function preferredMimeType() {
   ].find((type) => MediaRecorder.isTypeSupported(type)) || '';
 }
 
-function extensionFor(type: string) {
-  const base = type.split(';')[0].toLowerCase();
-  if (base === 'audio/mp4' || base === 'audio/m4a') return 'm4a';
-  if (base === 'audio/ogg') return 'ogg';
-  return 'webm';
-}
-
 type VoiceRecorderProps = {
   id: string;
   file: File | null;
@@ -43,6 +37,7 @@ type VoiceRecorderProps = {
 
 export function VoiceRecorder({ id, file, onFileChange, disabled }: VoiceRecorderProps) {
   const [recording, setRecording] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [issue, setIssue] = useState('');
   const [wordProgress, setWordProgress] = useState(0);
@@ -59,6 +54,7 @@ export function VoiceRecorder({ id, file, onFileChange, disabled }: VoiceRecorde
   const speakingMsRef = useRef(0);
   const silenceStartedRef = useRef(0);
   const detectedSpeechRef = useRef(false);
+  const noiseFloorRef = useRef(0.004);
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ''), [file]);
 
   useEffect(() => {
@@ -113,10 +109,11 @@ export function VoiceRecorder({ id, file, onFileChange, disabled }: VoiceRecorde
     let energy = 0;
     for (const sample of samples) energy += sample * sample;
     const volume = Math.sqrt(energy / samples.length);
-    const nextMeter = Math.min(10, Math.round(volume * 120));
+    const nextMeter = Math.min(10, Math.round(volume * 150));
     setMeterLevel((current) => (current === nextMeter ? current : nextMeter));
+    const threshold = Math.max(minimumVoiceThreshold, noiseFloorRef.current * 2.25);
 
-    if (volume >= voiceThreshold) {
+    if (volume >= threshold) {
       if (!detectedSpeechRef.current) {
         detectedSpeechRef.current = true;
         setDetectedSpeech(true);
@@ -124,9 +121,13 @@ export function VoiceRecorder({ id, file, onFileChange, disabled }: VoiceRecorde
       speakingMsRef.current += elapsed;
       silenceStartedRef.current = 0;
       const progress = Math.min(1, speakingMsRef.current / targetSpeakingMs);
-      const words = Math.min(promptWords.length, Math.max(1, Math.floor(progress * promptWords.length)));
+      const words = Math.min(promptWords.length, Math.max(1, Math.ceil(progress * promptWords.length)));
       setWordProgress((current) => (current === words ? current : words));
-    } else if (speakingMsRef.current >= targetSpeakingMs) {
+    } else {
+      noiseFloorRef.current = noiseFloorRef.current * 0.98 + volume * 0.02;
+    }
+
+    if (volume < threshold && speakingMsRef.current >= targetSpeakingMs) {
       silenceStartedRef.current ||= now;
       if (now - silenceStartedRef.current >= finishingSilenceMs) {
         stopRecording();
@@ -139,6 +140,22 @@ export function VoiceRecorder({ id, file, onFileChange, disabled }: VoiceRecorde
     }
   }
 
+  async function createPreparedFile(blob: Blob) {
+    const decodingContext = new AudioContext();
+    try {
+      const decoded = await decodingContext.decodeAudioData(await blob.arrayBuffer());
+      const channels = Array.from(
+        { length: decoded.numberOfChannels },
+        (_, index) => decoded.getChannelData(index),
+      );
+      const prepared = prepareVoicePcm(channels, decoded.sampleRate);
+      const wav = encodePcmWav(prepared, decoded.sampleRate);
+      return new File([wav], `guided-recording-${Date.now()}.wav`, { type: 'audio/wav' });
+    } finally {
+      await decodingContext.close().catch(() => {});
+    }
+  }
+
   async function startRecording() {
     setIssue('');
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
@@ -148,16 +165,30 @@ export function VoiceRecorder({ id, file, onFileChange, disabled }: VoiceRecorde
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: {
+          channelCount: { ideal: 1 },
+          sampleRate: { ideal: 48000 },
+          sampleSize: { ideal: 16 },
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
       });
       const mimeType = preferredMimeType();
-      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      const recorderOptions = { ...(mimeType ? { mimeType } : {}), audioBitsPerSecond: 192000 };
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(stream, recorderOptions);
+      } catch {
+        recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      }
       streamRef.current = stream;
       recorderRef.current = recorder;
       chunksRef.current = [];
       speakingMsRef.current = 0;
       silenceStartedRef.current = 0;
       detectedSpeechRef.current = false;
+      noiseFloorRef.current = 0.004;
       lastFrameRef.current = 0;
       setDetectedSpeech(false);
       setWordProgress(0);
@@ -173,18 +204,23 @@ export function VoiceRecorder({ id, file, onFileChange, disabled }: VoiceRecorde
         setRecording(false);
         releaseMicrophone();
       };
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         const type = recorder.mimeType || mimeType || 'audio/webm';
         const blob = new Blob(chunksRef.current, { type });
+        setRecording(false);
+        releaseMicrophone();
         if (blob.size && detectedSpeechRef.current) {
-          onFileChange(
-            new File([blob], `guided-recording-${Date.now()}.${extensionFor(type)}`, { type }),
-          );
+          setProcessing(true);
+          try {
+            onFileChange(await createPreparedFile(blob));
+          } catch {
+            setIssue('We could not clean up this recording. Please try again or upload a WAV file.');
+          } finally {
+            setProcessing(false);
+          }
         } else {
           setIssue('No clear speech was detected. Move closer to the microphone and try again.');
         }
-        setRecording(false);
-        releaseMicrophone();
       };
 
       const audioContext = new AudioContext();
@@ -194,7 +230,7 @@ export function VoiceRecorder({ id, file, onFileChange, disabled }: VoiceRecorde
       audioContext.createMediaStreamSource(stream).connect(analyser);
       audioContextRef.current = audioContext;
 
-      recorder.start(500);
+      recorder.start(250);
       setRecording(true);
       const samples = new Float32Array(new ArrayBuffer(analyser.fftSize * 4));
       animationRef.current = window.requestAnimationFrame(() => followVoice(analyser, samples));
@@ -237,11 +273,12 @@ export function VoiceRecorder({ id, file, onFileChange, disabled }: VoiceRecorde
         </p>
       </div>
 
-      {!recording && !file && (
+      {!recording && !processing && !file && (
         <button className="record-start" type="button" onClick={() => void startRecording()} disabled={disabled}>
           <Mic size={18} /> Start guided recording
         </button>
       )}
+      {processing && <p className="recording-processing" role="status">Preparing a clear, voice-ready sample…</p>}
       {recording && (
         <div className="guided-live" role="status" aria-live="polite">
           <div className="recording-live">
@@ -262,7 +299,7 @@ export function VoiceRecorder({ id, file, onFileChange, disabled }: VoiceRecorde
           <button type="button" onClick={retry} disabled={disabled}><RotateCcw size={14} /> Record again</button>
         </div>
       )}
-      <p className="recording-help">The guide follows microphone activity locally and stops after you finish the prompt. It does not transcribe or send your words elsewhere.</p>
+      <p className="recording-help">For the clearest voice, use a quiet room and stay 6–12 inches from the microphone. The guide follows microphone activity locally, then trims silence and prepares a voice-ready WAV without transcribing your words.</p>
       {issue && <p className="recording-error" role="alert">{issue}</p>}
     </div>
   );

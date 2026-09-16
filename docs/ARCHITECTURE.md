@@ -58,7 +58,7 @@ Email/password credentials use the authentication library's password hashing and
 
 Reference recordings and requested text are sent to the configured speech provider when generating. Provider credentials stay server-side. Mock mode requires a second explicit opt-in so an accidental environment-value change cannot silently enable it.
 
-The guided recorder uses the Web Audio API only inside the browser to measure microphone energy. It does not transcribe the prompt or send live microphone data to a speech-recognition service. Recorded bytes are uploaded only when the user explicitly saves the form.
+The guided recorder uses the Web Audio API only inside the browser to measure microphone energy. Its adaptive noise threshold and faster pacing model are an activity-based guide rather than semantic transcription. After capture, the client mixes the signal to mono, trims leading and trailing silence, applies bounded level normalization and short edge fades, and encodes a 16-bit PCM WAV. It does not transcribe the prompt or send live microphone data to a speech-recognition service. Prepared bytes are uploaded only when the user explicitly saves the form.
 
 ## Request lifecycle
 
