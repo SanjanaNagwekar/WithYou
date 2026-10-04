@@ -12,7 +12,7 @@ The current portfolio MVP runs on Cloudflare Workers with D1 metadata, private R
 
 - Create a voice profile from an uploaded file or a guided browser recording with responsive local activity feedback, silence trimming, level normalization, and voice-ready PCM WAV output.
 - Create an account with email and password, sign in with a secure session, and sign out.
-- Sign in with Google and safely link a verified Google identity to the same account.
+- Use Google for first-time account creation and later sign-in, and safely link a verified Google identity to an existing verified account.
 - Update a profile, change a password, revoke other sessions, and delete an account with all owned data.
 - Enable email verification and password recovery through optional server-side email delivery.
 - Organize each person as a voice profile with separate original-audio management, keepsake creation, and recent generated keepsakes.
@@ -105,8 +105,8 @@ npm run build
 
 ## Production requirements
 
-Production uses D1-backed accounts, encrypted OAuth tokens, hashed verification identifiers, database-backed authentication rate limits, and secure HTTP-only session cookies. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` before deployment. To enable Google sign-in, create a separate production Google OAuth web client and register `https://YOUR_DOMAIN/api/auth/callback/google` as an authorized redirect URI, then configure both Google variables. To require email verification and expose password recovery, configure both email delivery variables with a verified sender.
+Production uses D1-backed accounts, encrypted OAuth tokens, hashed verification identifiers, database-backed authentication rate limits, and secure HTTP-only session cookies. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` before deployment. To enable Google sign-in, create a separate production Google OAuth web client and register `https://YOUR_DOMAIN/api/auth/callback/google` as an authorized redirect URI, then configure both Google variables. To require email verification and expose password recovery, configure both email delivery variables with a verified sender. See [Authentication](docs/AUTHENTICATION.md) for the complete Google account lifecycle, console checklist, and release test.
 
 The current pilot has no payment processing, family sharing, subscription logic, background job queue, malware scanning, or legal-authority verification. It accepts MP3, WAV, M4A, and WebM reference files up to 15 MB; generations are limited to 1,000 characters and 30 successful generations per user per day.
 
-See [Architecture](docs/ARCHITECTURE.md), [Testing](docs/TESTING.md), [Contributing](CONTRIBUTING.md), and [Security](SECURITY.md) for more detail.
+See [Architecture](docs/ARCHITECTURE.md), [Authentication](docs/AUTHENTICATION.md), [Testing](docs/TESTING.md), [Contributing](CONTRIBUTING.md), and [Security](SECURITY.md) for more detail.

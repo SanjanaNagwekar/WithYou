@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getAuthenticatedUser, safeReturnPath } from '@/app/auth';
 import { AuthForm } from '@/components/auth-form';
 import { isAuthEmailConfigured, isGoogleSignInConfigured } from '@/lib/auth';
+import { oauthErrorMessage } from '@/lib/auth-errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,7 @@ export default async function SignInPage({
     return_to?: string;
     password_reset?: string;
     account_deleted?: string;
+    error?: string;
   }>;
 }) {
   const parameters = await searchParams;
@@ -27,6 +29,7 @@ export default async function SignInPage({
     <AuthForm
       emailDeliveryEnabled={isAuthEmailConfigured()}
       googleEnabled={isGoogleSignInConfigured()}
+      initialError={oauthErrorMessage(parameters.error)}
       initialNotice={initialNotice}
       returnTo={returnTo}
     />

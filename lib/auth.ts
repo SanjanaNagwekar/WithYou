@@ -34,6 +34,8 @@ function authConfiguration() {
           google: {
             clientId: config.GOOGLE_CLIENT_ID,
             clientSecret: config.GOOGLE_CLIENT_SECRET,
+            // Google sign-in is also the registration path for first-time users.
+            disableImplicitSignUp: false,
           },
         }
       : undefined;
@@ -88,7 +90,8 @@ function authConfiguration() {
       encryptOAuthTokens: true,
       accountLinking: {
         enabled: true,
-        trustedProviders: ['google'] as string[],
+        // Better Auth links matching accounts only when Google confirms the email.
+        // Do not force-trust a provider response that lacks that verification.
         allowDifferentEmails: false,
         allowUnlinkingAll: false,
       },
@@ -115,6 +118,7 @@ function authConfiguration() {
       max: 100,
       customRules: {
         '/sign-in/email': { window: 60, max: 10 },
+        '/sign-in/social': { window: 60, max: 20 },
         '/sign-up/email': { window: 60, max: 5 },
         '/request-password-reset': { window: 60, max: 3 },
         '/send-verification-email': { window: 60, max: 3 },

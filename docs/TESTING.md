@@ -13,7 +13,7 @@
 
 ## Isolation
 
-Unit tests do not require network services. API integration tests create Miniflare runtimes with temporary D1 and R2 resources, apply the checked-in migrations, and destroy the runtimes afterward. Authentication coverage verifies password account creation, session cookies, repeat sign-in, Google OAuth authorization URL creation, profile updates, password rotation, and complete account/data deletion without contacting Google or the email provider. Recording coverage verifies owner isolation and cascading voice deletion across D1, R2, and the configured voice-provider boundary.
+Unit tests do not require network services. API integration tests create Miniflare runtimes with temporary D1 and R2 resources, apply the checked-in migrations, and destroy the runtimes afterward. Authentication coverage verifies password account creation, session cookies, repeat sign-in, Google OAuth authorization URL/scopes/callback creation, first-time Google user provisioning through a locally signed provider identity, safe OAuth error copy, profile updates, password rotation, and complete account/data deletion without contacting Google or the email provider. Recording coverage verifies owner isolation and cascading voice deletion across D1, R2, and the configured voice-provider boundary. The real provider flow is also covered by the manual release check in [Authentication](AUTHENTICATION.md), because CI must not hold an interactive Google account.
 
 End-to-end preparation deletes only `.wrangler/e2e-state`, rebuilds the application, and reapplies migrations. Playwright starts the server with the deterministic mock voice provider. It never calls Cartesia and never reads a live provider key.
 

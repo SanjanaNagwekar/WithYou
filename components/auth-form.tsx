@@ -13,11 +13,13 @@ const getServerSnapshot = () => false;
 export function AuthForm({
   googleEnabled,
   emailDeliveryEnabled,
+  initialError,
   initialNotice,
   returnTo,
 }: {
   googleEnabled: boolean;
   emailDeliveryEnabled: boolean;
+  initialError: string;
   initialNotice: string;
   returnTo: string;
 }) {
@@ -29,7 +31,7 @@ export function AuthForm({
   );
   const [mode, setMode] = useState<AuthMode>('sign-in');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialError);
   const [status, setStatus] = useState(initialNotice);
 
   function switchMode(nextMode: AuthMode) {
@@ -87,7 +89,16 @@ export function AuthForm({
     setBusy(true);
     setError('');
     try {
-      const result = await authClient.signIn.social({ provider: 'google', callbackURL: returnTo });
+      const errorCallbackURL = `/sign-in?${new URLSearchParams({
+        return_to: returnTo,
+        oauth_error: 'google',
+      }).toString()}`;
+      const result = await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: returnTo,
+        newUserCallbackURL: returnTo,
+        errorCallbackURL,
+      });
       if (result.error) throw new Error(result.error.message || 'Google sign-in could not be started.');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Google sign-in could not be started.');
@@ -132,6 +143,7 @@ export function AuthForm({
               <button className="google-button" type="button" disabled={busy || !hydrated || !googleEnabled} onClick={() => void signInWithGoogle()}>
                 <span aria-hidden="true">G</span> Continue with Google
               </button>
+              {googleEnabled && <p className="provider-note">New here? Google will create your private account automatically.</p>}
               {!googleEnabled && <p className="provider-note">Google sign-in will be available after OAuth credentials are added.</p>}
 
               <div className="auth-divider"><span>or continue with email</span></div>
