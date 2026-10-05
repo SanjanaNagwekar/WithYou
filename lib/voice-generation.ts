@@ -1,5 +1,5 @@
 import { AppError } from '@/lib/errors';
-import { getVoiceProvider } from '@/lib/providers';
+import { getVoiceProvider, providerConfiguration } from '@/lib/providers';
 export { parseDelivery } from '@/lib/validation';
 import type { DeliverySettings } from '@/lib/validation';
 import type { KeepsakeLanguage } from '@/lib/languages';
@@ -26,11 +26,25 @@ export async function acquireGenerationLock(db: D1Database, voiceId: string) {
 }
 
 export async function enforceGenerationLimit(db: D1Database, owner: string) {
-  const count = await db
-    .prepare('SELECT COUNT(*) AS n FROM generation_events WHERE owner=? AND created_at>?')
-    .bind(owner, new Date(Date.now() - 86400000).toISOString())
-    .first<{ n: number }>();
-  if ((count?.n || 0) >= 30) {
-    throw new AppError('You have reached the MVP limit of 30 voice generations per day.', 429);
+  const config = providerConfiguration();
+  const boundary = new Date(Date.now() - 86400000).toISOString();
+  const [ownerCount, globalCount] = await Promise.all([
+    db
+      .prepare('SELECT COUNT(*) AS n FROM generation_events WHERE owner=? AND created_at>?')
+      .bind(owner, boundary)
+      .first<{ n: number }>(),
+    db
+      .prepare('SELECT COUNT(*) AS n FROM generation_events WHERE created_at>?')
+      .bind(boundary)
+      .first<{ n: number }>(),
+  ]);
+  if ((globalCount?.n || 0) >= config.WITHYOU_GLOBAL_DAILY_GENERATION_LIMIT) {
+    throw new AppError('The public pilot has reached today’s generation capacity.', 429);
+  }
+  if ((ownerCount?.n || 0) >= config.WITHYOU_DAILY_GENERATION_LIMIT) {
+    throw new AppError(
+      `You have reached the limit of ${config.WITHYOU_DAILY_GENERATION_LIMIT} voice generations per day.`,
+      429,
+    );
   }
 }

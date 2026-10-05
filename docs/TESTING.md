@@ -6,8 +6,8 @@
 | --- | --- | --- |
 | Static analysis | `npm run lint` | ESLint rules and common implementation mistakes. |
 | Type safety | `npm run typecheck` | TypeScript without emitting build files. |
-| Unit | `npm run test:coverage` | Validation, environment configuration, provider behavior, and PCM voice-sample preparation. |
-| API integration | `npm run test:integration` | Real auth/app route handlers against temporary isolated D1 and R2 resources. |
+| Unit | `npm run test:coverage` | Validation (including audio signatures), environment and kill-switch configuration, provider behavior, and PCM voice-sample preparation. |
+| API integration | `npm run test:integration` | Real auth/app route handlers, owner isolation, and upload throttling against temporary isolated D1 and R2 resources. |
 | Browser | `npm run test:e2e` | Public landing flow, account creation, account settings, guided recording UI, voice deletion, desktop primary journey, and mobile control smoke test in Chromium. |
 | Production build | `npm run build` | Complete Vinext build and route compilation. |
 
@@ -29,4 +29,4 @@ The normal local state in `.wrangler/state` is separate and is not reset by auto
 
 ## Continuous integration
 
-The CI workflow runs quality and browser jobs on pushes to `main` and on pull requests. Failed browser runs retain a Playwright report for seven days. Dependency review rejects newly introduced dependencies with moderate-or-higher known vulnerabilities, and CodeQL scans JavaScript/TypeScript changes.
+The CI workflow runs quality and browser jobs on pushes to `main` and on pull requests. Failed browser runs retain a Playwright report for seven days. The blocking npm audit covers production dependencies; Dependabot and dependency review cover development-tool updates without forcing incompatible toolchain downgrades. Dependency review rejects newly introduced dependencies with moderate-or-higher known vulnerabilities, and CodeQL scans JavaScript/TypeScript changes.

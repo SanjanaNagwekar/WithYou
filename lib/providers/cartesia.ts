@@ -19,7 +19,9 @@ const providerEmotion: Record<Mood, string | undefined> = {
 
 export class CartesiaVoiceProvider implements VoiceProvider {
   constructor(
-    private readonly config: ProviderEnvironment & { CARTESIA_API_KEY: string },
+    private readonly config: Pick<ProviderEnvironment, 'CARTESIA_API_KEY' | 'CARTESIA_MODEL_ID'> & {
+      CARTESIA_API_KEY: string;
+    },
     private readonly fetchImplementation: typeof fetch = fetch,
   ) {}
 

@@ -7,6 +7,7 @@ import {
   assertRequestSize,
   isValidAudioFile,
   normalizedAudioMime,
+  validatedAudioMime,
   parseDelivery,
   parseKeepsakeRequest,
 } from '@/lib/validation';
@@ -104,6 +105,43 @@ describe('audio validation', () => {
       isValidAudioFile(new File([new Uint8Array(MAX_AUDIO_BYTES + 1)], 'large.wav', { type: 'audio/wav' })),
     ).toBe(false);
     expect(isValidAudioFile(null)).toBe(false);
+  });
+
+  it('verifies audio signatures instead of trusting the browser MIME type', () => {
+    const wav = Uint8Array.from([
+      82, 73, 70, 70, 36, 0, 0, 0, 87, 65, 86, 69, 102, 109, 116, 32,
+    ]).buffer;
+    expect(validatedAudioMime(new File([wav], 'voice.wav', { type: 'audio/wav' }), wav)).toBe(
+      'audio/wav',
+    );
+
+    const disguisedText = new TextEncoder().encode('this is not audio').buffer;
+    expect(() =>
+      validatedAudioMime(
+        new File([disguisedText], 'fake.wav', { type: 'audio/wav' }),
+        disguisedText,
+      ),
+    ).toThrow('The selected file does not contain a supported audio format.');
+  });
+
+  it.each([
+    ['voice.ogg', 'audio/ogg', [79, 103, 103, 83], 'audio/ogg'],
+    ['voice.webm', 'audio/webm', [0x1a, 0x45, 0xdf, 0xa3], 'audio/webm'],
+    ['voice.m4a', 'audio/x-m4a', [0, 0, 0, 0, 102, 116, 121, 112], 'audio/mp4'],
+    ['voice.mp3', 'audio/mpeg', [73, 68, 51], 'audio/mpeg'],
+    ['voice.aac', 'audio/aac', [0xff, 0xf1], 'audio/aac'],
+    ['frame.mp3', 'audio/mpeg', [0xff, 0xe3], 'audio/mpeg'],
+  ])('accepts a valid %s signature', (_name, type, signature, expected) => {
+    const buffer = Uint8Array.from(signature as number[]).buffer;
+    expect(validatedAudioMime(new File([buffer], _name, { type }), buffer)).toBe(expected);
+  });
+
+  it('rejects declared audio types that do not match the detected bytes', () => {
+    const ogg = Uint8Array.from([79, 103, 103, 83]).buffer;
+    expect(() => validatedAudioMime(new File([ogg], 'voice.wav', { type: 'audio/wav' }), ogg))
+      .toThrow('The selected file does not contain a supported audio format.');
+    expect(() => validatedAudioMime(new File([], 'empty.wav', { type: 'audio/wav' }), ogg))
+      .toThrow('Choose a supported audio recording under 15 MB.');
   });
 
   it('rejects requests larger than the transport limit', () => {

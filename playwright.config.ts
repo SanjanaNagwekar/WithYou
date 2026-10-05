@@ -29,6 +29,7 @@ export default defineConfig({
       GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON: '{}',
       WITHYOU_PERSIST_PATH: '.wrangler/e2e-state',
       BETTER_AUTH_URL: baseURL,
+      WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP: 'true',
     },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

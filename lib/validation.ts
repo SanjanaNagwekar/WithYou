@@ -87,6 +87,47 @@ export function isValidAudioFile(value: unknown): value is File {
   return value instanceof File && value.size > 0 && value.size <= MAX_AUDIO_BYTES && allowedAudioTypes.has(mime);
 }
 
+export function validatedAudioMime(file: File, buffer: ArrayBuffer): string {
+  if (!isValidAudioFile(file)) {
+    throw new AppError('Choose a supported audio recording under 15 MB.');
+  }
+
+  const bytes = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 16));
+  const claimed = normalizedAudioMime(file);
+  const detected = detectAudioMime(bytes, claimed);
+  if (!detected || !mimeFamiliesMatch(claimed, detected)) {
+    throw new AppError('The selected file does not contain a supported audio format.');
+  }
+  return detected;
+}
+
+function detectAudioMime(bytes: Uint8Array, claimed: string): string | undefined {
+  const ascii = (start: number, value: string) =>
+    value.split('').every((character, index) => bytes[start + index] === character.charCodeAt(0));
+
+  if (bytes.length >= 12 && ascii(0, 'RIFF') && ascii(8, 'WAVE')) return 'audio/wav';
+  if (bytes.length >= 4 && ascii(0, 'OggS')) return 'audio/ogg';
+  if (bytes.length >= 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) {
+    return 'audio/webm';
+  }
+  if (bytes.length >= 8 && ascii(4, 'ftyp')) return 'audio/mp4';
+  if (bytes.length >= 3 && ascii(0, 'ID3')) return 'audio/mpeg';
+  if (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xf6) === 0xf0) {
+    return claimed === 'audio/mpeg' ? 'audio/mpeg' : 'audio/aac';
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0) {
+    return 'audio/mpeg';
+  }
+  return undefined;
+}
+
+function mimeFamiliesMatch(claimed: string, detected: string): boolean {
+  if (claimed === detected) return true;
+  if (detected === 'audio/wav') return claimed === 'audio/x-wav';
+  if (detected === 'audio/mp4') return ['audio/m4a', 'audio/x-m4a'].includes(claimed);
+  return false;
+}
+
 export function assertRequestSize(contentLength: string | null, message: string): void {
   const bytes = Number(contentLength);
   if (Number.isFinite(bytes) && bytes > MAX_REQUEST_BYTES) throw new AppError(message);

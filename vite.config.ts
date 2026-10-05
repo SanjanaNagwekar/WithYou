@@ -37,6 +37,10 @@ const localBindingConfig = {
   vars: {
     WITHYOU_VOICE_PROVIDER: process.env.WITHYOU_VOICE_PROVIDER || 'cartesia',
     WITHYOU_ALLOW_MOCK_PROVIDER: process.env.WITHYOU_ALLOW_MOCK_PROVIDER || 'false',
+    WITHYOU_GENERATION_ENABLED: process.env.WITHYOU_GENERATION_ENABLED || 'true',
+    WITHYOU_DAILY_GENERATION_LIMIT: process.env.WITHYOU_DAILY_GENERATION_LIMIT || '30',
+    WITHYOU_GLOBAL_DAILY_GENERATION_LIMIT:
+      process.env.WITHYOU_GLOBAL_DAILY_GENERATION_LIMIT || '300',
     CARTESIA_MODEL_ID: process.env.CARTESIA_MODEL_ID || 'sonic-3.6',
     WITHYOU_TRANSLATION_PROVIDER: process.env.WITHYOU_TRANSLATION_PROVIDER || 'google',
     WITHYOU_ALLOW_MOCK_TRANSLATION:
@@ -44,6 +48,8 @@ const localBindingConfig = {
     BETTER_AUTH_URL: isProductionDeployment
       ? production.url
       : process.env.BETTER_AUTH_URL || 'http://localhost:5173',
+    WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP:
+      process.env.WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP || 'false',
   },
   secrets: {
     required: [

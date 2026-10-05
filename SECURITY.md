@@ -12,10 +12,12 @@ Include the affected route or component, reproduction conditions, expected impac
 
 ## Supported version
 
-Until the first tagged release, security fixes apply to the latest commit on `main` only.
+Security fixes apply to the latest tagged release and the latest commit on `main`.
 
 ## Credential handling
 
 Never commit `.env`, provider keys, recordings, local Cloudflare state, browser reports, or database files. If a secret is exposed, revoke and replace it immediately; deleting it from the latest commit is not sufficient because Git history retains prior content.
 
 OAuth tokens are encrypted at rest, passwords are stored only as one-way hashes, and one-time verification identifiers are hashed. Production authentication secrets and provider credentials must be stored in the deployment platform's encrypted secret store. Account deletion removes owner-scoped D1 records and their private R2 audio objects before removing the identity record.
+
+Uploaded recordings are private objects and are accepted only when both their declared media type and byte signature identify a supported audio format. Authenticated upload attempts are throttled with one-way fingerprints, and generation has per-account and deployment-wide rolling limits plus an operator kill switch.

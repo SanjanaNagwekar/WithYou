@@ -14,6 +14,7 @@ function authConfiguration() {
     GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
     RESEND_API_KEY: env.RESEND_API_KEY,
     AUTH_EMAIL_FROM: env.AUTH_EMAIL_FROM,
+    WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP: env.WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP,
   });
 
   if (!env.DB) {
@@ -40,6 +41,8 @@ function authConfiguration() {
         }
       : undefined;
   const emailEnabled = emailDeliveryConfigured(config);
+  const emailSignUpEnabled =
+    !isProduction || emailEnabled || config.WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP === 'true';
 
   return {
     appName: 'WithYou',
@@ -48,6 +51,7 @@ function authConfiguration() {
     ...(config.BETTER_AUTH_URL ? { baseURL: config.BETTER_AUTH_URL } : {}),
     emailAndPassword: {
       enabled: true,
+      disableSignUp: !emailSignUpEnabled,
       minPasswordLength: 8,
       maxPasswordLength: 128,
       requireEmailVerification: emailEnabled,
@@ -173,4 +177,17 @@ export function isAuthEmailConfigured(): boolean {
     AUTH_EMAIL_FROM: env.AUTH_EMAIL_FROM,
   });
   return emailDeliveryConfigured(config);
+}
+
+export function isEmailSignUpEnabled(): boolean {
+  const config = parseAuthEnvironment({
+    RESEND_API_KEY: env.RESEND_API_KEY,
+    AUTH_EMAIL_FROM: env.AUTH_EMAIL_FROM,
+    WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP: env.WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP,
+  });
+  return (
+    process.env.NODE_ENV !== 'production' ||
+    emailDeliveryConfigured(config) ||
+    config.WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP === 'true'
+  );
 }

@@ -36,7 +36,7 @@ If the public hostname changes, update `BETTER_AUTH_URL`, the Google JavaScript 
 
 ## Email/password public-launch requirement
 
-Before opening email/password registration to unlisted testers, configure `RESEND_API_KEY` and `AUTH_EMAIL_FROM` with a verified sender. That enables email verification and password recovery. Google-only registration does not depend on Resend.
+Before opening email/password registration to unlisted testers, configure `RESEND_API_KEY` and `AUTH_EMAIL_FROM` with a verified sender. That enables email verification and password recovery. Production automatically disables new password registration until both values are configured; existing password users can still sign in, and Google registration remains available.
 
 ## Manual acceptance check
 

@@ -18,7 +18,10 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=moderate
+      # Block known runtime vulnerabilities. Development-only dependency risk is
+      # reviewed by Dependabot, Dependency Review, and CodeQL without forcing
+      # incompatible downgrades of the build toolchain.
+      - run: npm audit --omit=dev --audit-level=moderate
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:coverage

@@ -11,12 +11,18 @@ export function providerConfiguration() {
     CARTESIA_MODEL_ID: env.CARTESIA_MODEL_ID,
     WITHYOU_VOICE_PROVIDER: env.WITHYOU_VOICE_PROVIDER,
     WITHYOU_ALLOW_MOCK_PROVIDER: env.WITHYOU_ALLOW_MOCK_PROVIDER,
+    WITHYOU_GENERATION_ENABLED: env.WITHYOU_GENERATION_ENABLED,
+    WITHYOU_DAILY_GENERATION_LIMIT: env.WITHYOU_DAILY_GENERATION_LIMIT,
+    WITHYOU_GLOBAL_DAILY_GENERATION_LIMIT: env.WITHYOU_GLOBAL_DAILY_GENERATION_LIMIT,
   });
 }
 
 export function isVoiceProviderConfigured(): boolean {
   const config = providerConfiguration();
-  return config.WITHYOU_VOICE_PROVIDER === 'mock' || Boolean(config.CARTESIA_API_KEY);
+  return (
+    config.WITHYOU_GENERATION_ENABLED === 'true' &&
+    (config.WITHYOU_VOICE_PROVIDER === 'mock' || Boolean(config.CARTESIA_API_KEY))
+  );
 }
 
 export function voiceProviderMode(): 'cartesia' | 'mock' {
@@ -25,6 +31,9 @@ export function voiceProviderMode(): 'cartesia' | 'mock' {
 
 export function getVoiceProvider(): VoiceProvider {
   const config = providerConfiguration();
+  if (config.WITHYOU_GENERATION_ENABLED !== 'true') {
+    throw new AppError('Voice generation is temporarily paused by the app owner.', 503);
+  }
   if (config.WITHYOU_VOICE_PROVIDER === 'mock') return new MockVoiceProvider();
   if (!config.CARTESIA_API_KEY) {
     throw new AppError(

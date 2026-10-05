@@ -38,7 +38,8 @@ The production topology uses one Cloudflare Worker, a D1 database for applicatio
 - `lib/account.ts` reads linked identity methods and removes all owner-scoped metadata and R2 objects during account deletion.
 - `lib/email.ts` sends verification and recovery messages without exposing the email provider credential to the browser.
 - `lib/server.ts` enforces authentication, same-origin writes, and storage availability.
-- `lib/validation.ts` contains reusable input and business-rule validation.
+- `lib/validation.ts` contains reusable input and business-rule validation, including declared-type and byte-signature checks for uploaded audio.
+- `lib/request-limits.ts` applies privacy-preserving upload throttles keyed by a one-way owner and network fingerprint.
 - `lib/voice-generation.ts` coordinates cloning/generation, locks, quotas, D1 writes, and R2 objects.
 - `lib/providers/**` isolates the speech provider behind a small interface.
 - `db/schema.ts` defines D1 metadata tables; `drizzle/**` contains ordered migrations.
@@ -52,6 +53,7 @@ The production topology uses one Cloudflare Worker, a D1 database for applicatio
 - `recordings`: owner-scoped original or generated audio metadata, source and translated text provenance, language, and delivery settings.
 - `generation_locks`: short-lived, per-voice concurrency protection.
 - `generation_events`: successful generation history used for daily quotas and auditing.
+- `request_limits`: expiring counters for authenticated recording-upload abuse protection; raw network addresses are never stored.
 
 Audio bytes are never stored in D1. Each recording points to a private R2 object key. API handlers verify ownership before returning or changing metadata and objects.
 
@@ -61,7 +63,7 @@ Deleting a voice is an owner-checked cascading application operation: it removes
 
 Email/password credentials use the authentication library's password hashing and are never stored in plaintext. Google access, refresh, and ID tokens are encrypted at rest with AES-256-GCM; a migration removes legacy plaintext provider tokens. Verification identifiers are hashed. Sessions expire after seven days, refresh at most daily, and use HTTP-only, same-site cookies that become secure-only in production. Sensitive operations require a session created within the last 15 minutes unless the user confirms their password. Google OAuth is enabled only when both provider credentials are present; its implicit signup path creates a D1 user and provider account for a first-time identity. Same-email linking requires verified identities and different-email linking is disabled. Production also requires a high-entropy authentication secret and an explicit public base URL.
 
-Reference recordings and requested text are sent to the configured speech provider when generating. For multilingual keepsakes, the English source message is sent to Google Cloud Translation and the result is sent directly to the speech provider. Provider credentials stay server-side. Mock modes require separate explicit opt-ins so an accidental environment-value change cannot silently enable either one.
+Reference recordings and requested text are sent to the configured speech provider when generating. For multilingual keepsakes, the English source message is sent to Google Cloud Translation and the result is sent directly to the speech provider. Provider credentials stay server-side. Mock modes require separate explicit opt-ins so an accidental environment-value change cannot silently enable either one. Production password registration is disabled unless verified email delivery is configured; Google remains the public pilot's account-creation path while existing password users retain access.
 
 The guided recorder uses the Web Audio API only inside the browser to measure microphone energy. Its adaptive noise threshold and faster pacing model are an activity-based guide rather than semantic transcription. After capture, the client mixes the signal to mono, trims leading and trailing silence, applies bounded level normalization and short edge fades, and encodes a 16-bit PCM WAV. It does not transcribe the prompt or send live microphone data to a speech-recognition service. Prepared bytes are uploaded only when the user explicitly saves the form.
 
@@ -69,10 +71,10 @@ The guided recorder uses the Web Audio API only inside the browser to measure mi
 
 1. The server validates the session cookie, resolves the account owner, and rejects unauthenticated access.
 2. Write routes reject cross-origin browser requests.
-3. Shared validators constrain text, files, consent, and delivery settings.
+3. Shared validators constrain text, consent, and delivery settings; recording routes also confirm that uploaded bytes match a permitted audio container or codec signature and enforce a rolling upload limit.
 4. Database queries include the owner boundary.
 5. For a multilingual request, the server translates the source text before any audio request is made.
-6. Generation acquires a per-voice lock, checks the daily quota, and resolves or creates the language-specific localized voice using the language's verified Cartesia accent ID.
+6. Generation checks the operator kill switch plus global and per-owner rolling quotas, acquires a per-voice lock, and resolves or creates the language-specific localized voice using the language's verified Cartesia accent ID.
 7. The provider returns WAV bytes, which are stored in R2 before metadata is committed to D1.
 8. Updates regenerate the same logical keepsake with its language-specific voice and replace its audio object.
 

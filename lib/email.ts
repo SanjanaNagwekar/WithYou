@@ -1,5 +1,7 @@
 import type { AuthEnvironment } from '@/lib/config';
 
+type EmailEnvironment = Pick<AuthEnvironment, 'RESEND_API_KEY' | 'AUTH_EMAIL_FROM'>;
+
 type AuthEmail = {
   to: string;
   subject: string;
@@ -17,11 +19,11 @@ function escapeHtml(value: string): string {
   );
 }
 
-export function emailDeliveryConfigured(config: AuthEnvironment): boolean {
+export function emailDeliveryConfigured(config: EmailEnvironment): boolean {
   return Boolean(config.RESEND_API_KEY && config.AUTH_EMAIL_FROM);
 }
 
-export async function sendAuthEmail(config: AuthEnvironment, email: AuthEmail): Promise<void> {
+export async function sendAuthEmail(config: EmailEnvironment, email: AuthEmail): Promise<void> {
   if (!config.RESEND_API_KEY || !config.AUTH_EMAIL_FROM) {
     throw new Error('Authentication email delivery is not configured.');
   }

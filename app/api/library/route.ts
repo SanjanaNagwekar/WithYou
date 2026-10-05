@@ -1,7 +1,8 @@
 import { AppError, context, failure } from '@/lib/server';
 import { isVoiceProviderConfigured, voiceProviderMode } from '@/lib/providers';
 import { isTranslationProviderConfigured } from '@/lib/providers/translation';
-import { assertRequestSize, isValidAudioFile, normalizedAudioMime } from '@/lib/validation';
+import { assertRequestSize, isValidAudioFile, validatedAudioMime } from '@/lib/validation';
+import { enforceUploadLimit } from '@/lib/request-limits';
 
 export async function GET(request: Request) {
   try {
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
   try {
     const { db, owner, bucket } = await context(request, true);
     assertRequestSize(request.headers.get('content-length'), 'Please choose a recording under 15 MB.');
+    await enforceUploadLimit(request, db, owner);
     const data = await request.formData();
     const name = String(data.get('name') || '').trim();
     const relationship = String(data.get('relationship') || '').trim();
@@ -44,8 +46,9 @@ export async function POST(request: Request) {
     const recordingId = crypto.randomUUID();
     const objectKey = `${owner}/${recordingId}`;
     const now = new Date().toISOString();
-    const mime = normalizedAudioMime(audio);
-    await bucket.put(objectKey, await audio.arrayBuffer(), { httpMetadata: { contentType: mime } });
+    const audioBytes = await audio.arrayBuffer();
+    const mime = validatedAudioMime(audio, audioBytes);
+    await bucket.put(objectKey, audioBytes, { httpMetadata: { contentType: mime } });
     try {
       await db.batch([
         db.prepare('INSERT INTO voices(id,owner,name,relationship,consent_at,created_at) VALUES(?,?,?,?,?,?)').bind(voiceId, owner, name, relationship, now, now),

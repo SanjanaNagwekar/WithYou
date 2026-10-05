@@ -228,4 +228,37 @@ describe('recording API lifecycle', () => {
     const library = await getLibrary(new Request('http://localhost/api/library'));
     expect(((await library.json()) as { voices: unknown[] }).voices).toHaveLength(0);
   });
+
+  it('rate limits repeated recording uploads without storing raw IP addresses', async () => {
+    for (let index = 0; index < 20; index += 1) {
+      const form = new FormData();
+      form.set('name', `Voice ${index}`);
+      form.set('relationship', 'Test');
+      form.set('consent', 'yes');
+      form.set('audio', audioFixture(`voice-${index}.wav`));
+      const response = await createVoice(
+        new Request('http://localhost/api/library', {
+          method: 'POST',
+          headers: { 'cf-connecting-ip': '203.0.113.7' },
+          body: form,
+        }),
+      );
+      expect(response.status).toBe(201);
+    }
+
+    const blockedForm = new FormData();
+    blockedForm.set('name', 'Blocked voice');
+    blockedForm.set('relationship', 'Test');
+    blockedForm.set('consent', 'yes');
+    blockedForm.set('audio', audioFixture('blocked.wav'));
+    const blocked = await createVoice(
+      new Request('http://localhost/api/library', {
+        method: 'POST',
+        headers: { 'cf-connecting-ip': '203.0.113.7' },
+        body: blockedForm,
+      }),
+    );
+    expect(blocked.status).toBe(429);
+    expect(await db.prepare("SELECT key FROM request_limits WHERE key LIKE '%203.0.113.7%'").first()).toBeNull();
+  });
 });

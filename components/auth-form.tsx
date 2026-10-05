@@ -13,12 +13,14 @@ const getServerSnapshot = () => false;
 export function AuthForm({
   googleEnabled,
   emailDeliveryEnabled,
+  emailSignUpEnabled,
   initialError,
   initialNotice,
   returnTo,
 }: {
   googleEnabled: boolean;
   emailDeliveryEnabled: boolean;
+  emailSignUpEnabled: boolean;
   initialError: string;
   initialNotice: string;
   returnTo: string;
@@ -178,12 +180,17 @@ export function AuthForm({
             </button>
           )}
 
-          <p className="auth-switch">
-            {mode === 'sign-in' ? 'New to WithYou?' : 'Ready to return?'}{' '}
-            <button type="button" disabled={!hydrated} onClick={() => switchMode(mode === 'sign-in' ? 'sign-up' : 'sign-in')}>
-              {mode === 'sign-in' ? 'Create an account' : 'Sign in'}
-            </button>
-          </p>
+          {emailSignUpEnabled ? (
+            <p className="auth-switch">
+              {mode === 'sign-in' ? 'New to WithYou?' : 'Ready to return?'}{' '}
+              <button type="button" disabled={!hydrated} onClick={() => switchMode(mode === 'sign-in' ? 'sign-up' : 'sign-in')}>
+                {mode === 'sign-in' ? 'Create an account' : 'Sign in'}
+              </button>
+            </p>
+          ) : (
+            <p className="auth-switch">New accounts are created securely with Google during the public pilot.</p>
+          )}
+          <p className="auth-legal">By continuing, you agree to the <a href="/terms">Terms</a> and acknowledge the <a href="/privacy">Privacy Policy</a>.</p>
         </div>
       </section>
     </main>

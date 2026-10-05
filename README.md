@@ -21,6 +21,7 @@ The current portfolio MVP runs on Cloudflare Workers with D1 metadata, private R
 - Change delivery settings without creating a second keepsake record.
 - Remove an individual recording or permanently remove a voice profile with all associated recordings, keepsakes, stored audio, and provider clones.
 - Enforce per-owner access, same-origin writes, daily generation limits, and per-voice generation locks.
+- Reject files whose bytes do not match an allowed audio format, throttle recording uploads, and provide an operator generation kill switch.
 - Store metadata in Cloudflare D1 and private audio objects in Cloudflare R2.
 - Test validation, provider behavior, API/data boundaries, and the primary browser journey.
 
@@ -37,6 +38,7 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_dark_thunderball.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_auth_rate_limits.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0004_low_molly_hayes.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0005_public_pilot_limits.sql
 npm run dev
 ```
 
@@ -76,6 +78,9 @@ The seed command is idempotent and refuses to run against Cartesia. Do not enabl
 | `CARTESIA_MODEL_ID` | No | Cartesia model; defaults to `sonic-3.6`. |
 | `WITHYOU_VOICE_PROVIDER` | No | `cartesia` by default; `mock` for controlled demos/tests. |
 | `WITHYOU_ALLOW_MOCK_PROVIDER` | For mock mode | Must be `true` before mock generation is allowed. |
+| `WITHYOU_GENERATION_ENABLED` | No | Emergency server-side generation kill switch; defaults to `true`. |
+| `WITHYOU_DAILY_GENERATION_LIMIT` | No | Rolling 24-hour successful-generation limit per account; defaults to `30`. |
+| `WITHYOU_GLOBAL_DAILY_GENERATION_LIMIT` | No | Rolling 24-hour successful-generation limit across the deployment; defaults to `300`. |
 | `GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON` | For live translation | Complete server-side Google Cloud service-account credential JSON for Translation Advanced v3. |
 | `WITHYOU_TRANSLATION_PROVIDER` | No | `google` by default; `mock` for controlled demos/tests. |
 | `WITHYOU_ALLOW_MOCK_TRANSLATION` | For mock translation | Must be `true` before deterministic mock translations are allowed. |
@@ -85,6 +90,7 @@ The seed command is idempotent and refuses to run against Cartesia. Do not enabl
 | `GOOGLE_CLIENT_SECRET` | For Google sign-in | Google OAuth web client secret. Must be set with its client ID. |
 | `RESEND_API_KEY` | For verification/recovery email | Server-side Resend credential. Must be set with the sender address. |
 | `AUTH_EMAIL_FROM` | For verification/recovery email | Verified sender email address used for account messages. |
+| `WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP` | Local tests only | Explicitly enables password signup without email delivery. Never enable this in a public deployment. |
 | `WITHYOU_BASE_URL` | Seed only | Seed target; defaults to `http://localhost:5173`. |
 | `WITHYOU_PERSIST_PATH` | Test tooling only | Overrides local Cloudflare state location. |
 
@@ -105,8 +111,8 @@ npm run build
 
 ## Production requirements
 
-Production uses D1-backed accounts, encrypted OAuth tokens, hashed verification identifiers, database-backed authentication rate limits, and secure HTTP-only session cookies. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` before deployment. To enable Google sign-in, create a separate production Google OAuth web client and register `https://YOUR_DOMAIN/api/auth/callback/google` as an authorized redirect URI, then configure both Google variables. To require email verification and expose password recovery, configure both email delivery variables with a verified sender. See [Authentication](docs/AUTHENTICATION.md) for the complete Google account lifecycle, console checklist, and release test.
+Production uses D1-backed accounts, encrypted OAuth tokens, hashed verification identifiers, database-backed authentication and upload rate limits, byte-signature audio validation, rolling generation caps, and secure HTTP-only session cookies. Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` before deployment. To enable Google sign-in, create a separate production Google OAuth web client and register `https://YOUR_DOMAIN/api/auth/callback/google` as an authorized redirect URI, then configure both Google variables. New password registration stays disabled in production until verification email delivery is configured; existing password accounts can still sign in. See [Authentication](docs/AUTHENTICATION.md) for the complete Google account lifecycle, console checklist, and release test.
 
-The current pilot has no payment processing, family sharing, subscription logic, background job queue, malware scanning, or legal-authority verification. It accepts MP3, WAV, M4A, and WebM reference files up to 15 MB; generations are limited to 1,000 characters and 30 successful generations per user per day.
+The current pilot has no payment processing, family sharing, subscription logic, background job queue, antivirus engine, or legal-authority verification. It accepts audio whose declared type and file signature identify MP3, WAV, M4A, OGG, AAC, or WebM content up to 15 MB. Generations are limited to 1,000 characters, 30 successful generations per user per rolling day, and 300 successful generations globally per rolling day by default.
 
-See [Architecture](docs/ARCHITECTURE.md), [Authentication](docs/AUTHENTICATION.md), [Testing](docs/TESTING.md), [Contributing](CONTRIBUTING.md), and [Security](SECURITY.md) for more detail.
+See [Architecture](docs/ARCHITECTURE.md), [Authentication](docs/AUTHENTICATION.md), [Testing](docs/TESTING.md), [Privacy](app/privacy/page.tsx), [Terms](app/terms/page.tsx), [Contributing](CONTRIBUTING.md), and [Security](SECURITY.md) for more detail.

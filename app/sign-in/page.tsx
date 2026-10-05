@@ -1,7 +1,11 @@
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser, safeReturnPath } from '@/app/auth';
 import { AuthForm } from '@/components/auth-form';
-import { isAuthEmailConfigured, isGoogleSignInConfigured } from '@/lib/auth';
+import {
+  isAuthEmailConfigured,
+  isEmailSignUpEnabled,
+  isGoogleSignInConfigured,
+} from '@/lib/auth';
 import { oauthErrorMessage } from '@/lib/auth-errors';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +32,7 @@ export default async function SignInPage({
   return (
     <AuthForm
       emailDeliveryEnabled={isAuthEmailConfigured()}
+      emailSignUpEnabled={isEmailSignUpEnabled()}
       googleEnabled={isGoogleSignInConfigured()}
       initialError={oauthErrorMessage(parameters.error)}
       initialNotice={initialNotice}

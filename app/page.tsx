@@ -21,7 +21,7 @@ export default async function LandingPage() {
         <a className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</a>
         <nav className="landing-nav" aria-label="Primary navigation">
           <a href="#how-it-works">How it works</a>
-          <a href="#privacy">Privacy</a>
+          <a href="/privacy">Privacy</a>
           {user ? (
             <a className="landing-nav-cta" href="/studio">Open library <ArrowUpRight size={14} /></a>
           ) : (
@@ -128,6 +128,7 @@ export default async function LandingPage() {
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a className="brand small" href="/"><AudioLines /> WithYou</a>
         <p>Made for memories. Held with care.</p>
+        <div className="landing-footer-links"><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div>
         <span>PRIVATE VOICE KEEPSAKES · AI AUDIO IS LABELED</span>
       </footer>
     </div>

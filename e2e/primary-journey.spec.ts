@@ -31,6 +31,15 @@ test('public landing guides visitors into the product', async ({ page }) => {
   );
   await expect(page.getByRole('heading', { name: 'From a recording to something you can hold onto.' })).toBeVisible();
   await expect(page.getByText(/Quality-gated translation/)).toBeVisible();
+
+  await page.getByRole('contentinfo').getByRole('link', { name: 'Privacy' }).click();
+  await expect(page).toHaveURL('/privacy');
+  await expect(page.getByText('WITHYOU PRIVACY POLICY')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Terms', exact: true })).toHaveAttribute('href', '/terms');
+
+  await page.getByRole('link', { name: 'Terms', exact: true }).click();
+  await expect(page).toHaveURL('/terms');
+  await expect(page.getByText('WITHYOU TERMS OF USE')).toBeVisible();
 });
 
 test('navigation stays focused between the landing page and private library', async ({ page }) => {

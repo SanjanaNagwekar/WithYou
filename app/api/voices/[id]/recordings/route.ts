@@ -1,5 +1,6 @@
 import { AppError, context, failure } from '@/lib/server';
-import { assertRequestSize, isValidAudioFile, normalizedAudioMime } from '@/lib/validation';
+import { assertRequestSize, isValidAudioFile, validatedAudioMime } from '@/lib/validation';
+import { enforceUploadLimit } from '@/lib/request-limits';
 
 export async function POST(
   request: Request,
@@ -15,6 +16,7 @@ export async function POST(
       .bind(id, owner)
       .first();
     if (!voice) throw new AppError('Voice not found.', 404);
+    await enforceUploadLimit(request, db, owner);
 
     const data = await request.formData();
     const audio = data.get('audio');
@@ -29,12 +31,13 @@ export async function POST(
     if (!isValidAudioFile(audio)) {
       throw new AppError('Record audio or choose an audio file under 15 MB.');
     }
-    const mime = normalizedAudioMime(audio);
+    const audioBytes = await audio.arrayBuffer();
+    const mime = validatedAudioMime(audio, audioBytes);
 
     const recordingId = crypto.randomUUID();
     const objectKey = `${owner}/${recordingId}`;
     const now = new Date().toISOString();
-    await bucket.put(objectKey, await audio.arrayBuffer(), {
+    await bucket.put(objectKey, audioBytes, {
       httpMetadata: { contentType: mime },
     });
 

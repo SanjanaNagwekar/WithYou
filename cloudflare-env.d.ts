@@ -5,6 +5,9 @@ declare namespace Cloudflare {
     CARTESIA_MODEL_ID?: string;
     WITHYOU_VOICE_PROVIDER?: string;
     WITHYOU_ALLOW_MOCK_PROVIDER?: string;
+    WITHYOU_GENERATION_ENABLED?: string;
+    WITHYOU_DAILY_GENERATION_LIMIT?: string;
+    WITHYOU_GLOBAL_DAILY_GENERATION_LIMIT?: string;
     WITHYOU_TRANSLATION_PROVIDER?: string;
     WITHYOU_ALLOW_MOCK_TRANSLATION?: string;
     GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON?: string;
@@ -14,6 +17,7 @@ declare namespace Cloudflare {
     GOOGLE_CLIENT_SECRET?: string;
     RESEND_API_KEY?: string;
     AUTH_EMAIL_FROM?: string;
+    WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP?: string;
     BUCKET?: R2Bucket;
   }
 }

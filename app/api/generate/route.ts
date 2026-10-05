@@ -45,6 +45,12 @@ export async function POST(request: Request) {
       }>();
     if (!voice) throw new AppError('Voice not found.', 404);
 
+    // Reject over-quota requests before either paid provider is called.
+    await enforceGenerationLimit(db, owner);
+    await acquireGenerationLock(db, voice.id);
+    release = () =>
+      db.prepare('DELETE FROM generation_locks WHERE voice_id=?').bind(voice.id).run();
+
     const translation =
       targetLanguage === 'en'
         ? { translatedText: sourceText, provider: 'none' as const }
@@ -54,11 +60,6 @@ export async function POST(request: Request) {
             targetLanguage,
           });
     const transcript = translation.translatedText;
-
-    await acquireGenerationLock(db, voice.id);
-    release = () =>
-      db.prepare('DELETE FROM generation_locks WHERE voice_id=?').bind(voice.id).run();
-    await enforceGenerationLimit(db, owner);
 
     const provider = getVoiceProvider();
     if (!voice.voice_id) {

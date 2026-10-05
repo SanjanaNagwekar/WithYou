@@ -15,6 +15,9 @@ const providerEnvironmentSchema = z.object({
     .default('sonic-3.6'),
   WITHYOU_VOICE_PROVIDER: z.enum(['cartesia', 'mock']).default('cartesia'),
   WITHYOU_ALLOW_MOCK_PROVIDER: z.enum(['true', 'false']).default('false'),
+  WITHYOU_GENERATION_ENABLED: z.enum(['true', 'false']).default('true'),
+  WITHYOU_DAILY_GENERATION_LIMIT: z.coerce.number().int().min(1).max(100).default(30),
+  WITHYOU_GLOBAL_DAILY_GENERATION_LIMIT: z.coerce.number().int().min(1).max(10000).default(300),
 });
 
 const translationEnvironmentSchema = z.object({
@@ -42,6 +45,7 @@ const authEnvironmentSchema = z
       (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
       z.string().trim().email().optional(),
     ),
+    WITHYOU_ALLOW_UNVERIFIED_EMAIL_SIGNUP: z.enum(['true', 'false']).default('false'),
   })
   .superRefine((value, context) => {
     if (Boolean(value.GOOGLE_CLIENT_ID) !== Boolean(value.GOOGLE_CLIENT_SECRET)) {
