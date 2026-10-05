@@ -108,6 +108,43 @@ describe('recording API lifecycle', () => {
     );
     expect(updated.status).toBe(200);
 
+    const generationRuns = await db
+      .prepare(
+        'SELECT operation,provider,model,status,clone_latency_ms,synthesis_latency_ms,total_latency_ms,output_bytes,error_category FROM generation_runs WHERE owner=? ORDER BY created_at',
+      )
+      .bind('user-a')
+      .all<{
+        operation: string;
+        provider: string;
+        model: string;
+        status: string;
+        clone_latency_ms: number | null;
+        synthesis_latency_ms: number | null;
+        total_latency_ms: number;
+        output_bytes: number;
+        error_category: string | null;
+      }>();
+    expect(generationRuns.results).toHaveLength(2);
+    expect(generationRuns.results[0]).toMatchObject({
+      operation: 'create',
+      provider: 'mock',
+      model: 'deterministic-wav-v1',
+      status: 'succeeded',
+      error_category: null,
+    });
+    expect(generationRuns.results[0].clone_latency_ms).not.toBeNull();
+    expect(generationRuns.results[0].synthesis_latency_ms).not.toBeNull();
+    expect(generationRuns.results[0].total_latency_ms).toBeGreaterThanOrEqual(0);
+    expect(generationRuns.results[0].output_bytes).toBeGreaterThan(44);
+    expect(generationRuns.results[1]).toMatchObject({
+      operation: 'update',
+      provider: 'mock',
+      model: 'deterministic-wav-v1',
+      status: 'succeeded',
+      clone_latency_ms: null,
+      error_category: null,
+    });
+
     const deleted = await deleteRecording(
       new Request(`http://localhost/api/recordings/${recordingId}`, { method: 'DELETE' }),
       { params: Promise.resolve({ id: recordingId }) },
@@ -209,6 +246,68 @@ describe('recording API lifecycle', () => {
         .bind(voiceId)
         .first(),
     ).toMatchObject({ language: 'es' });
+    expect(
+      await db
+        .prepare(
+          'SELECT target_language,translation_provider,translation_latency_ms,localization_latency_ms,status FROM generation_runs WHERE recording_id=?',
+        )
+        .bind(recordingId)
+        .first(),
+    ).toMatchObject({
+      target_language: 'es',
+      translation_provider: 'mock',
+      status: 'succeeded',
+    });
+  });
+
+  it('records a privacy-safe failure category without storing the requested text', async () => {
+    const form = new FormData();
+    form.set('name', 'Test voice');
+    form.set('relationship', 'Friend');
+    form.set('consent', 'yes');
+    form.set('audio', audioFixture());
+    const created = await createVoice(
+      new Request('http://localhost/api/library', { method: 'POST', body: form }),
+    );
+    const voiceId = ((await created.json()) as { id: string }).id;
+
+    state.env.WITHYOU_TRANSLATION_PROVIDER = 'google';
+    state.env.GOOGLE_TRANSLATE_SERVICE_ACCOUNT_JSON = undefined;
+    const privateText = 'This text must never be copied into generation telemetry.';
+    const response = await generateKeepsake(
+      new Request('http://localhost/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: privateText,
+          voiceId,
+          targetLanguage: 'es',
+          mood: 'natural',
+          pace: 1,
+          volume: 1,
+        }),
+      }),
+    );
+    expect(response.status).toBe(503);
+
+    const failedRun = await db
+      .prepare(
+        'SELECT status,error_category,input_characters,translation_latency_ms FROM generation_runs WHERE voice_id=?',
+      )
+      .bind(voiceId)
+      .first<{
+        status: string;
+        error_category: string;
+        input_characters: number;
+        translation_latency_ms: number | null;
+      }>();
+    expect(failedRun).toMatchObject({
+      status: 'failed',
+      error_category: 'dependency',
+      input_characters: privateText.length,
+    });
+    expect(failedRun!.translation_latency_ms).not.toBeNull();
+    expect(JSON.stringify(failedRun)).not.toContain(privateText);
   });
 
   it('rejects cross-origin writes before changing storage', async () => {

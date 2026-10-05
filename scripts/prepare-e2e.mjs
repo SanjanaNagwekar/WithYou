@@ -13,6 +13,7 @@ const migrations = [
   fileURLToPath(new URL('../drizzle/0003_auth_rate_limits.sql', import.meta.url)),
   fileURLToPath(new URL('../drizzle/0004_low_molly_hayes.sql', import.meta.url)),
   fileURLToPath(new URL('../drizzle/0005_public_pilot_limits.sql', import.meta.url)),
+  fileURLToPath(new URL('../drizzle/0006_benchmark_foundation.sql', import.meta.url)),
 ];
 
 rmSync(statePath, { recursive: true, force: true });

@@ -29,6 +29,17 @@ export function voiceProviderMode(): 'cartesia' | 'mock' {
   return providerConfiguration().WITHYOU_VOICE_PROVIDER;
 }
 
+export function voiceProviderDescriptor(): { provider: 'cartesia' | 'mock'; model: string } {
+  const config = providerConfiguration();
+  return {
+    provider: config.WITHYOU_VOICE_PROVIDER,
+    model:
+      config.WITHYOU_VOICE_PROVIDER === 'mock'
+        ? 'deterministic-wav-v1'
+        : config.CARTESIA_MODEL_ID,
+  };
+}
+
 export function getVoiceProvider(): VoiceProvider {
   const config = providerConfiguration();
   if (config.WITHYOU_GENERATION_ENABLED !== 'true') {

@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "sourceLanguage": "en",
+  "description": "Fixed English prompt set for paired voice-cloning model comparisons.",
+  "prompts": [
+    {
+      "key": "neutral-reassurance",
+      "category": "neutral",
+      "text": "Take your time today. You have already made meaningful progress, and the next step does not need to be perfect."
+    },
+    {
+      "key": "warm-memory",
+      "category": "emotion",
+      "text": "I still smile when I remember our long conversations, the familiar jokes, and the way an ordinary afternoon could feel special."
+    },
+    {
+      "key": "question-and-pause",
+      "category": "prosody",
+      "text": "Did you remember to pause, breathe, and notice how far you have come? I hope you did."
+    },
+    {
+      "key": "phonetic-coverage",
+      "category": "phonetic",
+      "text": "Bright blue birds drift past the quiet garden while soft rain brushes the windows and children laugh nearby."
+    },
+    {
+      "key": "numbers-and-time",
+      "category": "numbers",
+      "text": "Meet me at seven thirty on October twelfth, and bring three photographs, two letters, and one favorite story."
+    },
+    {
+      "key": "long-form-encouragement",
+      "category": "long-form",
+      "text": "When a difficult day feels larger than you expected, remember that you can move slowly, ask for help, and begin again tomorrow with patience and courage."
+    }
+  ]
+}

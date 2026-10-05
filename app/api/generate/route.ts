@@ -1,6 +1,11 @@
 import { AppError, context, failure } from '@/lib/server';
-import { getVoiceProvider, isVoiceProviderConfigured } from '@/lib/providers';
+import {
+  getVoiceProvider,
+  isVoiceProviderConfigured,
+  voiceProviderDescriptor,
+} from '@/lib/providers';
 import { getTranslationProvider } from '@/lib/providers/translation';
+import { GenerationRunTracker } from '@/lib/generation-runs';
 import { parseKeepsakeRequest } from '@/lib/validation';
 import { keepsakeLocalizationAccent } from '@/lib/languages';
 import {
@@ -11,6 +16,7 @@ import {
 
 export async function POST(request: Request) {
   let release: (() => Promise<unknown>) | undefined;
+  let run: GenerationRunTracker | undefined;
 
   try {
     const { db, owner, bucket } = await context(request, true);
@@ -51,17 +57,29 @@ export async function POST(request: Request) {
     release = () =>
       db.prepare('DELETE FROM generation_locks WHERE voice_id=?').bind(voice.id).run();
 
+    const provider = getVoiceProvider();
+    const providerDescriptor = voiceProviderDescriptor();
+    run = await GenerationRunTracker.start(db, {
+      owner,
+      voiceId: voice.id,
+      operation: 'create',
+      ...providerDescriptor,
+      targetLanguage,
+      inputCharacters: sourceText.length,
+    });
+
     const translation =
       targetLanguage === 'en'
         ? { translatedText: sourceText, provider: 'none' as const }
-        : await getTranslationProvider().translate({
-            text: sourceText,
-            sourceLanguage: 'en',
-            targetLanguage,
-          });
+        : await run.measure('translation', () =>
+            getTranslationProvider().translate({
+              text: sourceText,
+              sourceLanguage: 'en',
+              targetLanguage,
+            }),
+          );
     const transcript = translation.translatedText;
 
-    const provider = getVoiceProvider();
     if (!voice.voice_id) {
       const recording = await db
         .prepare(
@@ -73,12 +91,16 @@ export async function POST(request: Request) {
 
       const source = await bucket.get(recording.object_key);
       if (!source) throw new AppError('Reference recording unavailable.');
-      voice.voice_id = await provider.cloneVoice({
-        audio: await source.arrayBuffer(),
-        mime: recording.mime,
-        fileName: recording.name,
-        name: voice.name,
-      });
+      const referenceAudio = await source.arrayBuffer();
+      run.setReferenceBytes(referenceAudio.byteLength);
+      voice.voice_id = await run.measure('clone', () =>
+        provider.cloneVoice({
+          audio: referenceAudio,
+          mime: recording.mime,
+          fileName: recording.name,
+          name: voice.name,
+        }),
+      );
       await db
         .prepare('UPDATE voices SET voice_id=? WHERE id=? AND owner=?')
         .bind(voice.voice_id, voice.id, owner)
@@ -96,12 +118,14 @@ export async function POST(request: Request) {
       if (existingVariant) {
         synthesisVoiceId = existingVariant.provider_voice_id;
       } else {
-        const localizedVoiceId = await provider.localizeVoice({
-          providerVoiceId: voice.voice_id,
-          language: targetLanguage,
-          accent: keepsakeLocalizationAccent(targetLanguage),
-          name: voice.name,
-        });
+        const localizedVoiceId = await run.measure('localization', () =>
+          provider.localizeVoice({
+            providerVoiceId: voice.voice_id!,
+            language: targetLanguage,
+            accent: keepsakeLocalizationAccent(targetLanguage),
+            name: voice.name,
+          }),
+        );
         try {
           await db
             .prepare(
@@ -124,11 +148,8 @@ export async function POST(request: Request) {
       }
     }
 
-    const audioBytes = await synthesizeKeepsake(
-      transcript,
-      synthesisVoiceId,
-      delivery,
-      targetLanguage,
+    const audioBytes = await run.measure('synthesis', () =>
+      synthesizeKeepsake(transcript, synthesisVoiceId, delivery, targetLanguage),
     );
     const id = crypto.randomUUID();
     const key = `${owner}/${id}`;
@@ -166,6 +187,11 @@ export async function POST(request: Request) {
             'INSERT INTO generation_events(id,owner,voice_id,recording_id,action,created_at) VALUES(?,?,?,?,?,?)',
           )
           .bind(crypto.randomUUID(), owner, voice.id, id, 'create', now),
+        run.successStatement({
+          recordingId: id,
+          outputBytes: audioBytes.byteLength,
+          translationProvider: translation.provider,
+        }),
       ]);
     } catch (error) {
       await bucket.delete(key);
@@ -174,6 +200,7 @@ export async function POST(request: Request) {
 
     return Response.json({ id, targetLanguage }, { status: 201 });
   } catch (error) {
+    if (run) await run.fail(error).catch(() => {});
     return failure(error);
   } finally {
     if (release) await release().catch(() => {});

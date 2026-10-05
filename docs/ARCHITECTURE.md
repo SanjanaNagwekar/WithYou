@@ -53,6 +53,9 @@ The production topology uses one Cloudflare Worker, a D1 database for applicatio
 - `recordings`: owner-scoped original or generated audio metadata, source and translated text provenance, language, and delivery settings.
 - `generation_locks`: short-lived, per-voice concurrency protection.
 - `generation_events`: successful generation history used for daily quotas and auditing.
+- `generation_runs`: privacy-safe generation telemetry with provider/model identity, stage latency, output size, status, and coarse error category. It intentionally excludes message text and raw errors.
+- `benchmark_runs`, `benchmark_cases`, and `benchmark_outputs`: reproducible experiment configuration, anonymized speaker/prompt cases, and paired model outputs.
+- `benchmark_scores` and `benchmark_ratings`: versioned automated metrics and blind human listening-test observations.
 - `request_limits`: expiring counters for authenticated recording-upload abuse protection; raw network addresses are never stored.
 
 Audio bytes are never stored in D1. Each recording points to a private R2 object key. API handlers verify ownership before returning or changing metadata and objects.
@@ -77,7 +80,8 @@ The guided recorder uses the Web Audio API only inside the browser to measure mi
 6. Generation checks the operator kill switch plus global and per-owner rolling quotas, acquires a per-voice lock, and resolves or creates the language-specific localized voice using the language's verified Cartesia accent ID.
 7. The provider returns WAV bytes, which are stored in R2 before metadata is committed to D1.
 8. Updates regenerate the same logical keepsake with its language-specific voice and replace its audio object.
+9. Each provider pipeline attempt updates a `generation_runs` record. The final D1 success update is committed in the same batch as the keepsake metadata and quota event; failures retain only a coarse category.
 
 ## Near-term extension points
 
-Billing, asynchronous generation, provider benchmarking, and observability should enter through explicit adapters/services. Translation already follows this pattern through a provider boundary. Keep route handlers thin and preserve the current owner, validation, and provider boundaries when adding them.
+Billing and asynchronous generation should enter through explicit adapters/services. Translation already follows this pattern through a provider boundary. The benchmark foundation reuses the voice-provider boundary and operational telemetry while keeping experiments isolated from product records. See [Voice-model benchmarking](BENCHMARKING.md) and [ADR 0001](decisions/0001-benchmark-data-model.md).

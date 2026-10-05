@@ -29,6 +29,20 @@ export async function deleteOwnedUserData(userId: string): Promise<void> {
     env.DB.prepare(
       'DELETE FROM generation_locks WHERE voice_id IN (SELECT id FROM voices WHERE owner = ?)',
     ).bind(userId),
+    env.DB.prepare(
+      'DELETE FROM benchmark_ratings WHERE benchmark_output_id IN (SELECT id FROM benchmark_outputs WHERE benchmark_case_id IN (SELECT id FROM benchmark_cases WHERE benchmark_run_id IN (SELECT id FROM benchmark_runs WHERE owner = ?)))',
+    ).bind(userId),
+    env.DB.prepare(
+      'DELETE FROM benchmark_scores WHERE benchmark_output_id IN (SELECT id FROM benchmark_outputs WHERE benchmark_case_id IN (SELECT id FROM benchmark_cases WHERE benchmark_run_id IN (SELECT id FROM benchmark_runs WHERE owner = ?)))',
+    ).bind(userId),
+    env.DB.prepare(
+      'DELETE FROM benchmark_outputs WHERE benchmark_case_id IN (SELECT id FROM benchmark_cases WHERE benchmark_run_id IN (SELECT id FROM benchmark_runs WHERE owner = ?))',
+    ).bind(userId),
+    env.DB.prepare(
+      'DELETE FROM benchmark_cases WHERE benchmark_run_id IN (SELECT id FROM benchmark_runs WHERE owner = ?)',
+    ).bind(userId),
+    env.DB.prepare('DELETE FROM benchmark_runs WHERE owner = ?').bind(userId),
+    env.DB.prepare('DELETE FROM generation_runs WHERE owner = ?').bind(userId),
     env.DB.prepare('DELETE FROM generation_events WHERE owner = ?').bind(userId),
     env.DB.prepare('DELETE FROM recordings WHERE owner = ?').bind(userId),
     env.DB.prepare('DELETE FROM voices WHERE owner = ?').bind(userId),

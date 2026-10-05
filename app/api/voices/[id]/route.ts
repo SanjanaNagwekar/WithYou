@@ -43,6 +43,43 @@ export async function DELETE(
 
     await db.batch([
       db.prepare('DELETE FROM generation_locks WHERE voice_id=?').bind(id),
+      db
+        .prepare(
+          `DELETE FROM benchmark_ratings WHERE benchmark_output_id IN (
+            SELECT id FROM benchmark_outputs WHERE recording_id IN (
+              SELECT id FROM recordings WHERE voice_id=? AND owner=?
+            ) OR generation_run_id IN (
+              SELECT id FROM generation_runs WHERE voice_id=? AND owner=?
+            )
+          )`,
+        )
+        .bind(id, owner, id, owner),
+      db
+        .prepare(
+          `DELETE FROM benchmark_scores WHERE benchmark_output_id IN (
+            SELECT id FROM benchmark_outputs WHERE recording_id IN (
+              SELECT id FROM recordings WHERE voice_id=? AND owner=?
+            ) OR generation_run_id IN (
+              SELECT id FROM generation_runs WHERE voice_id=? AND owner=?
+            )
+          )`,
+        )
+        .bind(id, owner, id, owner),
+      db
+        .prepare(
+          `DELETE FROM benchmark_outputs WHERE recording_id IN (
+            SELECT id FROM recordings WHERE voice_id=? AND owner=?
+          ) OR generation_run_id IN (
+            SELECT id FROM generation_runs WHERE voice_id=? AND owner=?
+          )`,
+        )
+        .bind(id, owner, id, owner),
+      db
+        .prepare(
+          'DELETE FROM benchmark_cases WHERE source_recording_id IN (SELECT id FROM recordings WHERE voice_id=? AND owner=?)',
+        )
+        .bind(id, owner),
+      db.prepare('DELETE FROM generation_runs WHERE voice_id=? AND owner=?').bind(id, owner),
       db.prepare('DELETE FROM generation_events WHERE voice_id=? AND owner=?').bind(id, owner),
       db.prepare('DELETE FROM voice_variants WHERE voice_id=? AND owner=?').bind(id, owner),
       db.prepare('DELETE FROM recordings WHERE voice_id=? AND owner=?').bind(id, owner),

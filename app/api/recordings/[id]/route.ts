@@ -1,5 +1,10 @@
 import { AppError, context, failure } from '@/lib/server';
-import { getVoiceProvider, isVoiceProviderConfigured } from '@/lib/providers';
+import {
+  getVoiceProvider,
+  isVoiceProviderConfigured,
+  voiceProviderDescriptor,
+} from '@/lib/providers';
+import { GenerationRunTracker } from '@/lib/generation-runs';
 import { isKeepsakeLanguage, keepsakeLocalizationAccent } from '@/lib/languages';
 import {
   acquireGenerationLock,
@@ -43,7 +48,26 @@ export async function DELETE(
     if (!recording) throw new AppError('Recording not found.', 404);
 
     await bucket.delete(recording.object_key);
-    await db.prepare('DELETE FROM recordings WHERE id=? AND owner=?').bind(id, owner).run();
+    await db.batch([
+      db
+        .prepare(
+          'DELETE FROM benchmark_ratings WHERE benchmark_output_id IN (SELECT id FROM benchmark_outputs WHERE recording_id=? OR benchmark_case_id IN (SELECT id FROM benchmark_cases WHERE source_recording_id=?))',
+        )
+        .bind(id, id),
+      db
+        .prepare(
+          'DELETE FROM benchmark_scores WHERE benchmark_output_id IN (SELECT id FROM benchmark_outputs WHERE recording_id=? OR benchmark_case_id IN (SELECT id FROM benchmark_cases WHERE source_recording_id=?))',
+        )
+        .bind(id, id),
+      db
+        .prepare(
+          'DELETE FROM benchmark_outputs WHERE recording_id=? OR benchmark_case_id IN (SELECT id FROM benchmark_cases WHERE source_recording_id=?)',
+        )
+        .bind(id, id),
+      db.prepare('DELETE FROM benchmark_cases WHERE source_recording_id=?').bind(id),
+      db.prepare('DELETE FROM generation_runs WHERE recording_id=? AND owner=?').bind(id, owner),
+      db.prepare('DELETE FROM recordings WHERE id=? AND owner=?').bind(id, owner),
+    ]);
     return new Response(null, { status: 204 });
   } catch (error) {
     return failure(error);
@@ -55,6 +79,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   let release: (() => Promise<unknown>) | undefined;
+  let run: GenerationRunTracker | undefined;
 
   try {
     const { db, owner, bucket } = await context(request, true);
@@ -65,13 +90,14 @@ export async function PATCH(
     const { id } = await params;
     const recording = await findRecording(db, owner, id);
     if (!recording) throw new AppError('Keepsake not found.', 404);
+    const targetLanguage = recording.target_language;
     if (recording.kind !== 'generated') {
       throw new AppError('Delivery can only be changed for generated keepsakes.');
     }
     if (
       !recording.transcript ||
       !recording.provider_voice_id ||
-      !isKeepsakeLanguage(recording.target_language)
+      !isKeepsakeLanguage(targetLanguage)
     ) {
       throw new AppError('This keepsake cannot be regenerated with its current voice.', 409);
     }
@@ -91,23 +117,35 @@ export async function PATCH(
         .run();
     await enforceGenerationLimit(db, owner);
 
+    const provider = getVoiceProvider();
+    run = await GenerationRunTracker.start(db, {
+      owner,
+      voiceId: recording.voice_id,
+      operation: 'update',
+      ...voiceProviderDescriptor(),
+      targetLanguage,
+      inputCharacters: recording.transcript.length,
+    });
+
     let synthesisVoiceId = recording.provider_voice_id;
-    if (recording.target_language !== 'en') {
+    if (targetLanguage !== 'en') {
       const variant = await db
         .prepare(
           'SELECT provider_voice_id FROM voice_variants WHERE voice_id=? AND owner=? AND language=?',
         )
-        .bind(recording.voice_id, owner, recording.target_language)
+        .bind(recording.voice_id, owner, targetLanguage)
         .first<{ provider_voice_id: string }>();
       if (variant) {
         synthesisVoiceId = variant.provider_voice_id;
       } else {
-        synthesisVoiceId = await getVoiceProvider().localizeVoice({
-          providerVoiceId: recording.provider_voice_id,
-          language: recording.target_language,
-          accent: keepsakeLocalizationAccent(recording.target_language),
-          name: recording.voice_name,
-        });
+        synthesisVoiceId = await run.measure('localization', () =>
+          provider.localizeVoice({
+            providerVoiceId: recording.provider_voice_id!,
+            language: targetLanguage,
+            accent: keepsakeLocalizationAccent(targetLanguage),
+            name: recording.voice_name,
+          }),
+        );
         try {
           await db
             .prepare(
@@ -117,23 +155,25 @@ export async function PATCH(
               crypto.randomUUID(),
               owner,
               recording.voice_id,
-              recording.target_language,
+              targetLanguage,
               synthesisVoiceId,
               new Date().toISOString(),
             )
             .run();
         } catch (error) {
-          await getVoiceProvider().deleteVoice(synthesisVoiceId).catch(() => {});
+          await provider.deleteVoice(synthesisVoiceId).catch(() => {});
           throw error;
         }
       }
     }
 
-    const audioBytes = await synthesizeKeepsake(
-      recording.transcript,
-      synthesisVoiceId,
-      delivery,
-      recording.target_language,
+    const audioBytes = await run.measure('synthesis', () =>
+      synthesizeKeepsake(
+        recording.transcript,
+        synthesisVoiceId,
+        delivery,
+        targetLanguage,
+      ),
     );
     const newKey = `${owner}/${crypto.randomUUID()}`;
     const now = new Date().toISOString();
@@ -160,6 +200,11 @@ export async function PATCH(
             'INSERT INTO generation_events(id,owner,voice_id,recording_id,action,created_at) VALUES(?,?,?,?,?,?)',
           )
           .bind(crypto.randomUUID(), owner, recording.voice_id, id, 'update', now),
+        run.successStatement({
+          recordingId: id,
+          outputBytes: audioBytes.byteLength,
+          translationProvider: 'none',
+        }),
       ]);
     } catch (error) {
       await bucket.delete(newKey);
@@ -169,6 +214,7 @@ export async function PATCH(
     await bucket.delete(recording.object_key).catch(() => {});
     return Response.json({ id, updatedAt: now });
   } catch (error) {
+    if (run) await run.fail(error).catch(() => {});
     return failure(error);
   } finally {
     if (release) await release().catch(() => {});
