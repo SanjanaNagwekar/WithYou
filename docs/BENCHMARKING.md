@@ -122,6 +122,23 @@ npm run benchmark:run -- --verification-confirmed=S01
 
 List several IDs with commas if necessary. This flag records only that the external step was completed; it does not bypass provider verification.
 
+### Offline automated evaluation
+
+Create the ignored evaluator environment once, then score a completed run locally:
+
+```bash
+python3 -m venv .venv-benchmark
+.venv-benchmark/bin/python -m pip install -r benchmarks/evaluation/requirements.txt
+npm run benchmark:evaluate -- --run-id=<private-run-id>
+
+# Create three independently shuffled, provider-blinded reviewer forms.
+npm run benchmark:prepare-review -- --run-id=<private-run-id>
+```
+
+The evaluator decodes every output and held-out reference to mono 16-bit PCM at 16 kHz. It computes cosine similarity from SpeechBrain's `spkrec-ecapa-voxceleb` embeddings, uses OpenAI Whisper `base.en` with JiWER to calculate normalized WER and CER, and uses the official UTMOSv2 `fusion_stage3` model to estimate naturalness. It records evaluator configurations, the resolved SpeechBrain model revision, and package versions; checkpoints after every clip; and exports private per-clip CSV/JSON plus a de-identified aggregate summary. The reference recording is processed locally and never uploaded.
+
+The listening-review command creates a private package containing opaque candidate IDs, provider-blinded WAV files, three independently randomized CSV response forms, a scoring rubric, and a separate answer key. Give each reviewer only one response form and the audio folder. Never share the answer key until ratings are final, and do not place completed forms or review audio in Git.
+
 ## Database design
 
 ```mermaid

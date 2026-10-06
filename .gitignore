@@ -56,3 +56,7 @@ next-env.d.ts
 /benchmarks/**/*.flac
 /benchmarks/**/*.ogg
 /benchmarks/**/*.webm
+/.venv-benchmark/
+/.cache/benchmark-models/
+__pycache__/
+*.py[cod]

@@ -1,0 +1,12 @@
+# Pinned local evaluator environment. Provider SDKs are intentionally excluded:
+# evaluation never uploads source or generated audio.
+torch==2.11.0
+torchaudio==2.11.0
+torchvision==0.26.0
+speechbrain==1.1.1
+openai-whisper==20250625
+jiwer==4.0.0
+timm==1.0.30
+librosa==1.0.0
+transformers==5.18.0
+utmosv2 @ git+https://github.com/sarulab-speech/UTMOSv2.git@v1.3.0

@@ -22,6 +22,8 @@
     "benchmark:dry-run": "node --import tsx scripts/benchmark.ts --dry-run",
     "benchmark:run": "node --import tsx scripts/benchmark.ts --execute",
     "benchmark:cleanup": "node --import tsx scripts/benchmark.ts --cleanup",
+    "benchmark:evaluate": ".venv-benchmark/bin/python benchmarks/evaluation/evaluate.py",
+    "benchmark:prepare-review": ".venv-benchmark/bin/python benchmarks/evaluation/prepare_review.py",
     "seed": "node scripts/seed.mjs",
     "validate": "npm run lint && npm run typecheck && npm run test:coverage && npm run test:integration && npm run build",
     "db:generate": "drizzle-kit generate"
