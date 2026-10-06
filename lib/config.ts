@@ -26,6 +26,15 @@ const translationEnvironmentSchema = z.object({
   WITHYOU_ALLOW_MOCK_TRANSLATION: z.enum(['true', 'false']).default('false'),
 });
 
+const benchmarkEnvironmentSchema = z.object({
+  ELEVENLABS_API_KEY: optionalSecret,
+  ELEVENLABS_MODEL_ID: z
+    .string()
+    .trim()
+    .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/)
+    .default('eleven_v4'),
+});
+
 const optionalUrl = z.preprocess(
   (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
   z.string().trim().url().refine((value) => value.startsWith('http://') || value.startsWith('https://')).optional(),
@@ -67,6 +76,7 @@ const authEnvironmentSchema = z
 export type ProviderEnvironment = z.infer<typeof providerEnvironmentSchema>;
 export type TranslationEnvironment = z.infer<typeof translationEnvironmentSchema>;
 export type AuthEnvironment = z.infer<typeof authEnvironmentSchema>;
+export type BenchmarkEnvironment = z.infer<typeof benchmarkEnvironmentSchema>;
 
 export function parseProviderEnvironment(input: Record<string, unknown>): ProviderEnvironment {
   const result = providerEnvironmentSchema.safeParse(input);
@@ -106,6 +116,22 @@ export function parseTranslationEnvironment(
     result.data.WITHYOU_ALLOW_MOCK_TRANSLATION !== 'true'
   ) {
     throw new AppError('The mock translation provider must be explicitly enabled.', 503);
+  }
+  return result.data;
+}
+
+export function parseBenchmarkEnvironment(
+  input: Record<string, unknown>,
+): BenchmarkEnvironment {
+  const result = benchmarkEnvironmentSchema.safeParse(input);
+  if (!result.success) {
+    const fields = [...new Set(result.error.issues.map((issue) => issue.path.join('.')))]
+      .filter(Boolean)
+      .join(', ');
+    throw new AppError(
+      `Benchmark provider configuration is invalid${fields ? `: ${fields}` : ''}.`,
+      503,
+    );
   }
   return result.data;
 }

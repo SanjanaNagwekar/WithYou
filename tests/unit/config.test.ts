@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   parseAuthEnvironment,
+  parseBenchmarkEnvironment,
   parseProviderEnvironment,
   parseTranslationEnvironment,
 } from '@/lib/config';
@@ -103,6 +104,30 @@ describe('parseTranslationEnvironment', () => {
         WITHYOU_ALLOW_MOCK_TRANSLATION: 'true',
       }).WITHYOU_TRANSLATION_PROVIDER,
     ).toBe('mock');
+  });
+});
+
+describe('parseBenchmarkEnvironment', () => {
+  it('defaults to Eleven v4 without requiring a benchmark key at app startup', () => {
+    expect(parseBenchmarkEnvironment({})).toEqual({ ELEVENLABS_MODEL_ID: 'eleven_v4' });
+  });
+
+  it('accepts a scoped ElevenLabs key and explicit model', () => {
+    expect(
+      parseBenchmarkEnvironment({
+        ELEVENLABS_API_KEY: 'benchmark-key',
+        ELEVENLABS_MODEL_ID: 'eleven_v4',
+      }),
+    ).toEqual({
+      ELEVENLABS_API_KEY: 'benchmark-key',
+      ELEVENLABS_MODEL_ID: 'eleven_v4',
+    });
+  });
+
+  it('rejects malformed benchmark model identifiers', () => {
+    expect(() => parseBenchmarkEnvironment({ ELEVENLABS_MODEL_ID: '../model' })).toThrow(
+      'Benchmark provider configuration is invalid: ELEVENLABS_MODEL_ID.',
+    );
   });
 });
 
