@@ -1,0 +1,2 @@
+speaker_id,enrollment_file,reference_file,recorded_at,consent_at,age_confirmed,cartesia_consent,elevenlabs_consent,private_review_consent,audio_publication_consent,withdrawn_at,quality_notes
+S01,S01_enrollment.mp3,S01_reference.mp3,YYYY-MM-DD,YYYY-MM-DD,true,true,true,true,false,,quiet room; same microphone for both recordings

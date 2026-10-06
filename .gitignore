@@ -46,3 +46,13 @@ next-env.d.ts
 /work/
 *.tsbuildinfo
 !.env.example
+
+# Private benchmark inputs, consent records, identity maps, and generated audio.
+/benchmarks/private/
+/benchmarks/data/
+/benchmarks/**/*.wav
+/benchmarks/**/*.mp3
+/benchmarks/**/*.m4a
+/benchmarks/**/*.flac
+/benchmarks/**/*.ogg
+/benchmarks/**/*.webm
