@@ -95,6 +95,33 @@ Keep these constant across both models:
 
 Store provider-specific options in `benchmark_runs.experiment_config_json`. The configuration is reproducibility metadata and must never include API keys. A benchmark output links its model identity to the corresponding production-style `generation_runs` telemetry record.
 
+## Benchmark runner
+
+The local runner is safe by default and never contacts a provider unless execution is explicitly requested.
+
+```bash
+# Validate consent, files, hashes, models, and all planned cases without API calls.
+npm run benchmark:dry-run
+
+# Create provider clones and generate missing paired outputs. This consumes credits.
+npm run benchmark:run
+
+# Delete provider clones after generation or when consent is withdrawn.
+npm run benchmark:cleanup
+```
+
+The first English run uses four anonymous speakers, six prompts, and two providers for 48 outputs. It sends the exact same enrollment-file bytes to Cartesia and ElevenLabs and never uploads the held-out reference recording. Provider order alternates between cases to reduce ordering and transient-load bias. Cartesia uses the dated `sonic-3.6-2026-08-27` model by default; ElevenLabs uses `eleven_v4`. Cartesia outputs WAV and ElevenLabs outputs 128 kbps, 44.1 kHz MP3 at the available account tier. Evaluators decode both to the same analysis waveform before scoring.
+
+Every clone and output is checkpointed in `benchmarks/private/runs/<run-id>/state.json`. Stable case IDs include the run ID, anonymous speaker ID, prompt-set version, prompt key, prompt digest, and language. A retry skips completed outputs instead of spending credits again. Voice IDs, outputs, source hashes, and run state remain inside the Git-ignored private directory.
+
+If ElevenLabs reports that a participant requires speaker verification, the runner stops after saving the voice ID. Complete the provider's verification flow with that participant present, then resume with:
+
+```bash
+npm run benchmark:run -- --verification-confirmed=S01
+```
+
+List several IDs with commas if necessary. This flag records only that the external step was completed; it does not bypass provider verification.
+
 ## Database design
 
 ```mermaid

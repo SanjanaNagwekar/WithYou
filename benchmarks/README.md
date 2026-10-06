@@ -33,3 +33,13 @@ benchmarks/private/
 The entire `benchmarks/private/` directory and common audio formats under `benchmarks/` are Git-ignored. Confirm with `git status --short` before every commit. Keep the separate mapping from `S01` to a person's identity outside the repository and outside this directory.
 
 Collection instructions and the exact scripts are in [`docs/BENCHMARKING.md`](../docs/BENCHMARKING.md).
+
+## Runner safety
+
+The runner defaults to a zero-cost dry-run:
+
+```bash
+npm run benchmark:dry-run
+```
+
+It validates consent flags, source files, audio metadata, prompt hashes, credentials, model IDs, and the complete paired case plan. Provider calls require the explicit `benchmark:run` command. Progress is checkpointed under `benchmarks/private/runs/`, so retries skip completed clones and outputs. `benchmark:cleanup` deletes provider clones while retaining private outputs for evaluation.
