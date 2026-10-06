@@ -135,14 +135,21 @@ export class ElevenLabsVoiceProvider implements VoiceProvider {
       status: response.status,
       code,
     });
-    throw mapProviderError(response.status, stage);
+    throw mapProviderError(response.status, stage, code);
   }
 }
 
 function mapProviderError(
   status: number,
   stage: 'clone' | 'synthesize' | 'delete',
+  code = 'unknown',
 ): AppError {
+  if (code === 'can_not_use_instant_voice_cloning') {
+    return new AppError(
+      'ElevenLabs Instant Voice Cloning is not enabled for this account. Upgrade to Starter or above, then resume the benchmark with a new run ID.',
+      503,
+    );
+  }
   if (status === 401 || status === 403) {
     return new AppError('The benchmark voice service is not authorized for this request.', 503);
   }

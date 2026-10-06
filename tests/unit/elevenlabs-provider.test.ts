@@ -103,6 +103,29 @@ describe('ElevenLabsVoiceProvider', () => {
     expect(error.message).not.toContain('test-key');
   });
 
+  it('explains the account upgrade required for Instant Voice Cloning', async () => {
+    const provider = new ElevenLabsVoiceProvider(
+      config,
+      vi.fn().mockResolvedValue(
+        Response.json(
+          { detail: { status: 'can_not_use_instant_voice_cloning' } },
+          { status: 400 },
+        ),
+      ) as unknown as typeof fetch,
+    );
+    await expect(
+      provider.cloneVoice({
+        audio: new ArrayBuffer(1),
+        mime: 'audio/mp4',
+        fileName: 'sample.m4a',
+        name: 'Sample voice',
+      }),
+    ).rejects.toMatchObject({
+      status: 503,
+      message: expect.stringContaining('Upgrade to Starter or above'),
+    });
+  });
+
   it('rejects malformed clone responses', async () => {
     const provider = new ElevenLabsVoiceProvider(
       config,
