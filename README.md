@@ -1,5 +1,15 @@
 # WithYou
 
+<p align="center">
+  <a href="https://withyou.sanjana-nagwekar.workers.dev">
+    <img src="docs/assets/withyou-landing.jpg" alt="WithYou landing page — private voice keepsakes" width="100%">
+  </a>
+</p>
+
+<p align="center">
+  <strong><a href="https://withyou.sanjana-nagwekar.workers.dev">Explore the live application →</a></strong>
+</p>
+
 WithYou is a private voice-keepsake application with a public product landing page and an authenticated personal studio. It preserves consented reference recordings, stores original memories, and creates clearly labeled synthetic keepsakes through a configurable speech provider. A keepsake can be replayed, downloaded, deleted, or regenerated in place with a different feeling, pace, and volume.
 
 ## Live application
