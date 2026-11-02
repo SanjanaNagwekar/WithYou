@@ -116,7 +116,10 @@ function authConfiguration() {
     },
     rateLimit: {
       enabled: true,
-      storage: 'database',
+      // Production needs a shared limiter across Worker isolates. In local and
+      // test environments, memory storage avoids D1 emulator contention while
+      // preserving the same request limits.
+      storage: isProduction ? 'database' : 'memory',
       modelName: 'authRateLimit',
       window: 60,
       max: 100,
