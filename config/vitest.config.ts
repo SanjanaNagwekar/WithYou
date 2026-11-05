@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./', import.meta.url)),
+      '@': fileURLToPath(new URL('../src/', import.meta.url)),
     },
   },
   test: {
@@ -13,7 +13,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html'],
-      include: ['lib/config.ts', 'lib/validation.ts', 'lib/providers/cartesia.ts'],
+      include: ['src/lib/config.ts', 'src/lib/validation.ts', 'src/lib/providers/cartesia.ts'],
       thresholds: {
         lines: 80,
         functions: 80,

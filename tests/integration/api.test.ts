@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Miniflare } from 'miniflare';
-import { audioFixture, createTestRuntime } from '@/tests/helpers/test-runtime';
+import { audioFixture, createTestRuntime } from '../helpers/test-runtime';
 
 const state = vi.hoisted(() => ({
   env: {} as Record<string, unknown>,

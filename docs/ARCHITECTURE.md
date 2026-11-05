@@ -26,25 +26,27 @@ The production topology uses one Cloudflare Worker, a D1 database for applicatio
 
 ## Boundaries and responsibilities
 
-- `app/page.tsx` is the public product landing page and adapts its primary action for signed-in visitors.
-- `app/research/page.tsx` publishes the privacy-safe voice-model evaluation, product decision, and future-reviewer recruitment path.
-- `app/studio/page.tsx` is the authenticated server boundary for the private library.
-- `app/studio.tsx` owns the voice-profile experience, separates original recordings from generated keepsakes, and calls server routes.
-- `app/sign-in/**`, `app/reset-password/**`, and the authentication form components own account creation, sign-in, verification, and recovery UI.
-- `app/account/**` and `components/account-settings.tsx` own profile, password, session, and account-deletion controls.
-- `app/api/auth/**` exposes the email/password and Google OAuth endpoints.
-- `app/api/**` implements library, audio, voice-sample, recording-bank, generation, update, and delete operations.
-- `app/review/[token]` and `app/api/review/**` provide a no-account, provider-blinded listening study backed by opaque invite tokens.
-- `app/auth.ts` resolves server-validated Better Auth sessions and maps them to app owners.
-- `lib/auth.ts` configures Better Auth against D1, including Google OAuth, email lifecycle hooks, session policy, token encryption, and rate limits.
-- `lib/account.ts` reads linked identity methods and removes all owner-scoped metadata and R2 objects during account deletion.
-- `lib/email.ts` sends verification and recovery messages without exposing the email provider credential to the browser.
-- `lib/server.ts` enforces authentication, same-origin writes, and storage availability.
-- `lib/validation.ts` contains reusable input and business-rule validation, including declared-type and byte-signature checks for uploaded audio.
-- `lib/request-limits.ts` applies privacy-preserving upload throttles keyed by a one-way owner and network fingerprint.
-- `lib/voice-generation.ts` coordinates cloning/generation, locks, quotas, D1 writes, and R2 objects.
-- `lib/providers/**` isolates the speech provider behind a small interface.
-- `db/schema.ts` defines D1 metadata tables; `drizzle/**` contains ordered migrations.
+Application source is grouped under `src/`; tests, migrations, documentation, benchmark artifacts, and operational scripts remain separate at the repository root.
+
+- `src/app/page.tsx` is the public product landing page and adapts its primary action for signed-in visitors.
+- `src/app/research/page.tsx` publishes the privacy-safe voice-model evaluation, product decision, and future-reviewer recruitment path.
+- `src/app/studio/page.tsx` is the authenticated server boundary for the private library.
+- `src/app/studio.tsx` owns the voice-profile experience, separates original recordings from generated keepsakes, and calls server routes.
+- `src/app/sign-in/**`, `src/app/reset-password/**`, and the authentication form components own account creation, sign-in, verification, and recovery UI.
+- `src/app/account/**` and `src/components/account-settings.tsx` own profile, password, session, and account-deletion controls.
+- `src/app/api/auth/**` exposes the email/password and Google OAuth endpoints.
+- `src/app/api/**` implements library, audio, voice-sample, recording-bank, generation, update, and delete operations.
+- `src/app/review/[token]` and `src/app/api/review/**` provide a no-account, provider-blinded listening study backed by opaque invite tokens.
+- `src/app/auth.ts` resolves server-validated Better Auth sessions and maps them to app owners.
+- `src/lib/auth.ts` configures Better Auth against D1, including Google OAuth, email lifecycle hooks, session policy, token encryption, and rate limits.
+- `src/lib/account.ts` reads linked identity methods and removes all owner-scoped metadata and R2 objects during account deletion.
+- `src/lib/email.ts` sends verification and recovery messages without exposing the email provider credential to the browser.
+- `src/lib/server.ts` enforces authentication, same-origin writes, and storage availability.
+- `src/lib/validation.ts` contains reusable input and business-rule validation, including declared-type and byte-signature checks for uploaded audio.
+- `src/lib/request-limits.ts` applies privacy-preserving upload throttles keyed by a one-way owner and network fingerprint.
+- `src/lib/voice-generation.ts` coordinates cloning/generation, locks, quotas, D1 writes, and R2 objects.
+- `src/lib/providers/**` isolates the speech provider behind a small interface.
+- `src/db/schema.ts` defines D1 metadata tables; `drizzle/**` contains ordered migrations.
 
 ## Data model
 

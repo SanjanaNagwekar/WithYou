@@ -179,4 +179,4 @@ Production uses D1-backed accounts, encrypted OAuth tokens, hashed verification 
 
 The current pilot has no payment processing, family sharing, subscription logic, background job queue, antivirus engine, or legal-authority verification. It accepts audio whose declared type and file signature identify MP3, WAV, M4A, OGG, AAC, or WebM content up to 15 MB. Generations are limited to 1,000 characters, 30 successful generations per user per rolling day, and 300 successful generations globally per rolling day by default.
 
-See [Architecture](docs/ARCHITECTURE.md), [Voice-model benchmarking](docs/BENCHMARKING.md), [Authentication](docs/AUTHENTICATION.md), [Testing](docs/TESTING.md), [Privacy](app/privacy/page.tsx), [Terms](app/terms/page.tsx), [Contributing](CONTRIBUTING.md), and [Security](SECURITY.md) for more detail.
+See [Architecture](docs/ARCHITECTURE.md), [Voice-model benchmarking](docs/BENCHMARKING.md), [Authentication](docs/AUTHENTICATION.md), [Testing](docs/TESTING.md), [Privacy](src/app/privacy/page.tsx), [Terms](src/app/terms/page.tsx), [Contributing](CONTRIBUTING.md), and [Security](SECURITY.md) for more detail.

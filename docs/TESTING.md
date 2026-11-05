@@ -23,7 +23,7 @@ The normal local state in `.wrangler/state` is separate and is not reset by auto
 
 - Put pure business-rule cases in `tests/unit`.
 - Put full route/storage behavior in `tests/integration` using `tests/helpers/test-runtime.ts`.
-- Extend `e2e/primary-journey.spec.ts` only for high-value user-visible flows.
+- Extend `tests/e2e/primary-journey.spec.ts` only for high-value user-visible flows.
 - Assert behavior and accessibility roles instead of implementation-specific CSS selectors where possible.
 - Use synthetic audio in tests; do not commit personal voice recordings or credentials.
 

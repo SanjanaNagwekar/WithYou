@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Miniflare } from 'miniflare';
-import { createTestRuntime, minimalWav } from '@/tests/helpers/test-runtime';
+import { createTestRuntime, minimalWav } from '../helpers/test-runtime';
 
 const state = vi.hoisted(() => ({ env: {} as Record<string, unknown> }));
 vi.mock('cloudflare:workers', () => ({ env: state.env }));
