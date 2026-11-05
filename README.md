@@ -35,6 +35,46 @@ The current portfolio MVP runs on Cloudflare Workers with D1 metadata, private R
 - Store metadata in Cloudflare D1 and private audio objects in Cloudflare R2.
 - Test validation, provider behavior, API/data boundaries, and the primary browser journey.
 
+## Product Decisions & Tradeoffs
+
+WithYou is intentionally scoped as a private pilot rather than a complete social or commerce product. The MVP optimizes for three things in order: informed consent, recognizable voice quality, and a short path from recording to keepsake. Features that would increase reach or monetization were deferred when they also increased misuse risk, operational complexity, or uncertainty about the core experience.
+
+### Privacy and consent before growth
+
+Voice cloning can create real emotional value, but it can also be misused. The MVP therefore requires users to confirm permission before creating a voice profile, records the consent timestamp, isolates every library by owner, and supports deletion at the recording, keepsake, profile, and account levels. Deleting a profile also removes its stored audio and remote provider clones. Benchmark audio, participant identities, consent records, and provider voice IDs remain private and are excluded from Git; operational telemetry deliberately omits message text and raw provider errors.
+
+This adds friction and postpones easy sharing, but that is an intentional tradeoff. A private, reversible workflow was a more responsible way to validate whether people value the product before introducing collaboration or public distribution.
+
+### Choosing a voice provider with evidence
+
+The current MVP uses Cartesia, based on an initial controlled comparison with ElevenLabs rather than a single demo clip. Four consenting speakers produced 24 paired cases using identical enrollment audio and prompts. The [preliminary automated results](benchmarks/results/english-v1-automated.md) showed:
+
+| Product signal | Cartesia | ElevenLabs | Decision impact |
+| --- | ---: | ---: | --- |
+| Speaker similarity (median ECAPA cosine) | 0.821 | 0.783 | Cartesia better preserved the identity users came to hear. |
+| Predicted naturalness (median UTMOS) | 3.150 | 3.214 | ElevenLabs sounded modestly more natural by this proxy, so there was no universal winner. |
+| Word error rate (median) | 0.000 | 0.000 | Intelligibility did not separate the providers in the English test. |
+| Generation latency (median) | 1,126 ms | 1,730 ms | Cartesia was faster in all 24 paired cases. |
+| Failed generations | 0 of 24 | 0 of 24 | Reliability did not separate them in this small run. |
+
+Cartesia was selected provisionally because speaker similarity is the product's quality gate, and its lower latency improves the creation loop. Its dedicated voice-localization path also supports a deliberately constrained multilingual experience. ElevenLabs' naturalness result remains important evidence, and the choice will be revisited after provider-blinded listener ratings and native-speaker multilingual testing.
+
+Voice quality alone is not enough to make the product decision. A provider must first meet a minimum identity-similarity threshold; among providers that pass, the decision should also consider pronunciation, latency, failure rate, supported localization paths, and cost per successful generation. The current benchmark measures quality, latency, and reliability. Normalized provider cost and multilingual human ratings remain explicit gates before a commercial release. Until then, the language selector exposes only 15 languages with provider-supported localization rather than every language Google can translate.
+
+### Deliberately excluded from the MVP
+
+| Deferred feature | Why it was deferred |
+| --- | --- |
+| Payments and subscriptions | Validate repeated user value and understand generation costs before designing monetization. |
+| Family sharing or public links | Sharing requires a stronger permissions, consent-withdrawal, and recipient-deletion model. |
+| Every Google Translate language | Text translation support does not guarantee that the cloned voice will remain recognizable in that language. |
+| Word-synchronized recording transcription | Early speech tracking lagged behind the speaker and created false precision; reliable audio capture and activity feedback mattered more. |
+| Background generation queues | Synchronous generation, quotas, and per-voice locks are sufficient for pilot traffic; a queue becomes valuable when real usage shows contention or retry demand. |
+
+### What I would improve with more user feedback
+
+The next feedback loop would combine qualitative interviews with a small set of privacy-safe funnel measures: recording completion and re-record rate, time to first keepsake, generation success and latency, repeat creation, and deletion confidence. I would use that evidence to improve recording guidance and onboarding first, complete the blinded and multilingual listening study, and then decide whether collaboration, asynchronous processing, or payments solves the most important observed user problem. This keeps the roadmap tied to user behavior instead of adding features only because the underlying technology makes them possible.
+
 ## Local setup
 
 Prerequisites: an even-numbered Node.js release supported by the toolchain (22.13+, 24, or 26+) and npm. Continuous integration uses Node.js 24.
