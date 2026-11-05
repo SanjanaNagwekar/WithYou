@@ -27,6 +27,7 @@ The production topology uses one Cloudflare Worker, a D1 database for applicatio
 ## Boundaries and responsibilities
 
 - `app/page.tsx` is the public product landing page and adapts its primary action for signed-in visitors.
+- `app/research/page.tsx` publishes the privacy-safe voice-model evaluation, product decision, and future-reviewer recruitment path.
 - `app/studio/page.tsx` is the authenticated server boundary for the private library.
 - `app/studio.tsx` owns the voice-profile experience, separates original recordings from generated keepsakes, and calls server routes.
 - `app/sign-in/**`, `app/reset-password/**`, and the authentication form components own account creation, sign-in, verification, and recovery UI.

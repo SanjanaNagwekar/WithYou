@@ -31,6 +31,15 @@ test('public landing guides visitors into the product', async ({ page }) => {
   );
   await expect(page.getByRole('heading', { name: 'From a recording to something you can hold onto.' })).toBeVisible();
   await expect(page.getByText(/Quality-gated translation/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Research' }).first()).toHaveAttribute('href', '/research');
+
+  await page.getByRole('link', { name: 'Research' }).first().click();
+  await expect(page).toHaveURL('/research');
+  await expect(page.getByRole('heading', { name: 'Choosing a voice model with evidence.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What listeners heard' })).toBeVisible();
+  await expect(page.getByText('48 Cartesia · 5 ElevenLabs · 19 ties')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Request reviewer access/ })).toHaveAttribute('href', /mailto:/);
+  await page.getByRole('link', { name: 'Back home' }).click();
 
   await page.getByRole('contentinfo').getByRole('link', { name: 'Privacy' }).click();
   await expect(page).toHaveURL('/privacy');

@@ -34,6 +34,7 @@ The current portfolio MVP runs on Cloudflare Workers with D1 metadata, private R
 - Reject files whose bytes do not match an allowed audio format, throttle recording uploads, and provide an operator generation kill switch.
 - Store metadata in Cloudflare D1 and private audio objects in Cloudflare R2.
 - Run private, provider-blinded A/B listening studies through tokenized reviewer links with randomized voice order and resumable responses.
+- Publish a privacy-safe research brief with the study design, final comparison results, product decision, and a path to volunteer for future review rounds.
 - Test validation, provider behavior, API/data boundaries, and the primary browser journey.
 
 ## Product Decisions & Tradeoffs
@@ -58,7 +59,17 @@ The current MVP uses Cartesia, based on an initial controlled comparison with El
 | Generation latency (median) | 1,126 ms | 1,730 ms | Cartesia was faster in all 24 paired cases. |
 | Failed generations | 0 of 24 | 0 of 24 | Reliability did not separate them in this small run. |
 
-Cartesia was selected provisionally because speaker similarity is the product's quality gate, and its lower latency improves the creation loop. Its dedicated voice-localization path also supports a deliberately constrained multilingual experience. ElevenLabs' naturalness result remains important evidence, and the choice will be revisited after provider-blinded listener ratings and native-speaker multilingual testing.
+Cartesia was selected because speaker similarity is the product's quality gate, and its lower latency improves the creation loop. The automated and human evaluations now agree on that core signal. Its dedicated voice-localization path also supports a deliberately constrained multilingual experience. Native-speaker multilingual testing remains the next quality gate.
+
+The provider-blinded human study is complete: three reviewers evaluated 24 paired cases and made 216 focused listening decisions. Cartesia received 48 of 53 non-tied speaker-similarity preferences and 38 of 40 non-tied naturalness preferences. Pronunciation was less conclusive: 50 of 72 judgments were ties, and one reviewer favored ElevenLabs while the other two heard little difference.
+
+<p align="center">
+  <a href="https://withyou.sanjana-nagwekar.workers.dev/research">
+    <img src="docs/assets/benchmark-human-results.svg" alt="Provider-blinded human evaluation results comparing Cartesia and ElevenLabs" width="100%">
+  </a>
+</p>
+
+<p align="center"><strong><a href="https://withyou.sanjana-nagwekar.workers.dev/research">Explore the live research brief →</a></strong></p>
 
 Voice quality alone is not enough to make the product decision. A provider must first meet a minimum identity-similarity threshold; among providers that pass, the decision should also consider pronunciation, latency, failure rate, supported localization paths, and cost per successful generation. The current benchmark measures quality, latency, and reliability. Normalized provider cost and multilingual human ratings remain explicit gates before a commercial release. Until then, the language selector exposes only 15 languages with provider-supported localization rather than every language Google can translate.
 

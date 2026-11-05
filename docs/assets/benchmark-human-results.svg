@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title description">
+  <title id="title">WithYou provider-blinded human evaluation results</title>
+  <description id="description">Stacked bars show Cartesia, ElevenLabs, and tie preference percentages for speaker similarity, naturalness, and pronunciation across 72 judgments per metric.</description>
+  <rect width="1200" height="560" rx="24" fill="#faf9f5"/>
+  <text x="70" y="72" fill="#344236" font-family="Georgia, serif" font-size="34">What listeners heard</text>
+  <text x="70" y="106" fill="#778075" font-family="Arial, sans-serif" font-size="15">Provider-blinded A/B study · 3 reviewers · 24 paired cases · 72 judgments per metric</text>
+  <g font-family="Arial, sans-serif" font-size="14">
+    <rect x="700" y="57" width="16" height="16" rx="4" fill="#526b4d"/><text x="726" y="71" fill="#526050">Cartesia</text>
+    <rect x="826" y="57" width="16" height="16" rx="4" fill="#c98369"/><text x="852" y="71" fill="#526050">ElevenLabs</text>
+    <rect x="986" y="57" width="16" height="16" rx="4" fill="#dfe3d9"/><text x="1012" y="71" fill="#526050">Tie</text>
+  </g>
+  <g font-family="Arial, sans-serif">
+    <text x="70" y="190" fill="#3f4f40" font-size="18" font-weight="700">Speaker similarity</text><text x="70" y="214" fill="#80877d" font-size="13">Does it sound like the reference person?</text>
+    <rect x="330" y="169" width="520" height="58" rx="9" fill="#eef0e9"/><path d="M339 169H676.8V227H339A9 9 0 0 1 330 218V178A9 9 0 0 1 339 169Z" fill="#526b4d"/><rect x="676.8" y="169" width="35.9" height="58" fill="#c98369"/><path d="M712.7 169H841A9 9 0 0 1 850 178V218A9 9 0 0 1 841 227H712.7Z" fill="#dfe3d9"/>
+    <text x="470" y="204" fill="#fff" font-size="16" font-weight="700">66.7%</text><text x="932" y="192" fill="#526050" font-size="15" font-weight="700">48 Cartesia</text><text x="932" y="216" fill="#818980" font-size="13">5 ElevenLabs · 19 ties</text>
+    <text x="70" y="320" fill="#3f4f40" font-size="18" font-weight="700">Naturalness</text><text x="70" y="344" fill="#80877d" font-size="13">Does the generated speech sound human?</text>
+    <rect x="330" y="299" width="520" height="58" rx="9" fill="#eef0e9"/><path d="M339 299H604.6V357H339A9 9 0 0 1 330 348V308A9 9 0 0 1 339 299Z" fill="#526b4d"/><rect x="604.6" y="299" width="14.6" height="58" fill="#c98369"/><path d="M619.2 299H841A9 9 0 0 1 850 308V348A9 9 0 0 1 841 357H619.2Z" fill="#dfe3d9"/>
+    <text x="438" y="334" fill="#fff" font-size="16" font-weight="700">52.8%</text><text x="932" y="322" fill="#526050" font-size="15" font-weight="700">38 Cartesia</text><text x="932" y="346" fill="#818980" font-size="13">2 ElevenLabs · 32 ties</text>
+    <text x="70" y="450" fill="#3f4f40" font-size="18" font-weight="700">Pronunciation</text><text x="70" y="474" fill="#80877d" font-size="13">Which is clearer and more accurate?</text>
+    <rect x="330" y="429" width="520" height="58" rx="9" fill="#eef0e9"/><path d="M339 429H373.2V487H339A9 9 0 0 1 330 478V438A9 9 0 0 1 339 429Z" fill="#526b4d"/><rect x="373.2" y="429" width="115.5" height="58" fill="#c98369"/><path d="M488.7 429H841A9 9 0 0 1 850 438V478A9 9 0 0 1 841 487H488.7Z" fill="#dfe3d9"/>
+    <text x="407" y="464" fill="#fff" font-size="15" font-weight="700">22.2%</text><text x="932" y="452" fill="#526050" font-size="15" font-weight="700">50 ties</text><text x="932" y="476" fill="#818980" font-size="13">16 ElevenLabs · 6 Cartesia</text>
+  </g>
+  <text x="70" y="532" fill="#8a9188" font-family="Arial, sans-serif" font-size="12">Initial controlled evaluation; descriptive results, not a population-level significance claim.</text>
+</svg>

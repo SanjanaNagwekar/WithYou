@@ -208,4 +208,4 @@ erDiagram
 
 Report the median and interquartile range per model for similarity, naturalness, intelligibility, and latency. Also show paired per-speaker differences so one unusually easy voice cannot dominate the average. Include failure rate and sample count. Do not claim statistical significance from three to five speakers; describe the result as an initial controlled evaluation and publish the protocol, prompt version, evaluator versions, and limitations alongside the chart.
 
-After all links are complete, the next analysis step is to decode A/B choices through the server-side provider mapping, aggregate paired preference rates with ties reported separately, and publish only de-identified totals alongside the automated results.
+The first three-reviewer English study is complete. Its de-identified aggregate is published in [`benchmarks/results/english-v1-automated.md`](../benchmarks/results/english-v1-automated.md) and the live [`/research`](https://withyou.sanjana-nagwekar.workers.dev/research) brief. Future rounds should be versioned separately so new ratings do not silently change a published result.

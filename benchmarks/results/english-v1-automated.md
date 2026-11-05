@@ -1,6 +1,6 @@
-# English voice-cloning benchmark: preliminary automated results
+# English voice-cloning benchmark: final initial evaluation
 
-Status: automated evaluation complete; blinded listener evaluation pending.
+Status: automated and provider-blinded listener evaluations complete.
 
 ## Experiment
 
@@ -25,6 +25,20 @@ Source recordings, generated clips, transcriptions, consent records, provider vo
 
 The automated signals show a tradeoff rather than a universal winner. Cartesia preserved the held-out speaker representation more closely and generated every paired sample faster. ElevenLabs received a modestly higher predicted-naturalness score. Both providers had a median word error rate of zero, so intelligibility did not meaningfully separate them in this English slice.
 
+## Provider-blinded human results
+
+Three independent reviewers evaluated all 24 paired cases through private, independently randomized survey links. For each pair, reviewers selected Cartesia, ElevenLabs, or “about the same” for speaker similarity, naturalness, and pronunciation. This produced 72 judgments per metric and 216 focused listening decisions overall.
+
+| Metric | Cartesia | ElevenLabs | Tie |
+| --- | ---: | ---: | ---: |
+| Speaker similarity | 48 (66.7%) | 5 (6.9%) | 19 (26.4%) |
+| Naturalness | 38 (52.8%) | 2 (2.8%) | 32 (44.4%) |
+| Pronunciation | 6 (8.3%) | 16 (22.2%) | 50 (69.4%) |
+
+Cartesia received 90.6% of non-tied similarity preferences and 95.0% of non-tied naturalness preferences. All three reviewers independently favored Cartesia for speaker similarity. Pronunciation did not yield a stable provider-level conclusion: two reviewers overwhelmingly selected ties, while one reviewer favored ElevenLabs. The disagreement is retained as a limitation rather than collapsed into a universal pronunciation claim.
+
+Together, the automated and human signals support Cartesia for the current MVP. Recognizable speaker identity is WithYou's primary quality gate, and Cartesia led that measure in both evaluation modes while also reducing median generation latency by 604 ms. ElevenLabs' modest UTMOS advantage demonstrates why a model proxy alone should not determine the product decision.
+
 ## Evaluators and reproducibility
 
 - Speaker similarity: SpeechBrain `spkrec-ecapa-voxceleb`, cosine similarity against the held-out reference
@@ -37,4 +51,4 @@ The implementation and complete protocol are documented in [`docs/BENCHMARKING.m
 
 ## Limitations and next gate
 
-This is a controlled product experiment with four speakers, not a population-level study or a statistical-significance claim. ECAPA similarity, Whisper error rates, and UTMOSv2 are proxy metrics; none replaces human perception. The next gate is a provider-blinded evaluation with three independent ratings per output for speaker similarity, naturalness, and pronunciation accuracy. The final model recommendation will combine those human ratings with the automated and operational results above.
+This is a controlled product experiment with four speakers and three reviewers, not a population-level study or a statistical-significance claim. ECAPA similarity, Whisper error rates, and UTMOSv2 remain proxy metrics, and the human sample is intentionally small. The next gate is a smaller multilingual study with native-language reviewers, consistent recording conditions, and per-language reporting rather than one blended score.
