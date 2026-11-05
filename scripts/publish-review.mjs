@@ -118,7 +118,7 @@ for (const value of audio.values()) {
 }
 const temporary = await mkdtemp(path.join(tmpdir(), 'withyou-review-'));
 const sqlFile = path.join(temporary, 'seed.sql');
-await writeFile(sqlFile, `BEGIN;\n${sql.join('\n')}\nCOMMIT;\n`);
+await writeFile(sqlFile, `${sql.join('\n')}\n`);
 execFileSync(process.execPath, [wrangler, 'd1', 'execute', database, '--file', sqlFile, '--yes', ...configArgs], { cwd: root, stdio: 'inherit' });
 console.log('Survey published. Share one private URL per reviewer from the ignored link manifest.');
 
