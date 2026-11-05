@@ -139,7 +139,9 @@ test('user can update profile and secure other sessions', async ({ page }) => {
   await expect(page).toHaveURL('/studio');
   await expect(page.getByText('Updated E2E User')).toBeVisible();
 
+  await page.waitForLoadState('networkidle');
   await page.getByRole('button', { name: 'Add a voice profile' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('button', { name: 'Record now' }).click();
   await expect(page.getByText('READ THIS ALOUD')).toBeVisible();
   await expect(page.getByText(/Every morning, I open the window/)).toBeVisible();

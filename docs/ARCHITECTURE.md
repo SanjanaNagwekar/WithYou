@@ -33,6 +33,7 @@ The production topology uses one Cloudflare Worker, a D1 database for applicatio
 - `app/account/**` and `components/account-settings.tsx` own profile, password, session, and account-deletion controls.
 - `app/api/auth/**` exposes the email/password and Google OAuth endpoints.
 - `app/api/**` implements library, audio, voice-sample, recording-bank, generation, update, and delete operations.
+- `app/review/[token]` and `app/api/review/**` provide a no-account, provider-blinded listening study backed by opaque invite tokens.
 - `app/auth.ts` resolves server-validated Better Auth sessions and maps them to app owners.
 - `lib/auth.ts` configures Better Auth against D1, including Google OAuth, email lifecycle hooks, session policy, token encryption, and rate limits.
 - `lib/account.ts` reads linked identity methods and removes all owner-scoped metadata and R2 objects during account deletion.
@@ -56,6 +57,7 @@ The production topology uses one Cloudflare Worker, a D1 database for applicatio
 - `generation_runs`: privacy-safe generation telemetry with provider/model identity, stage latency, output size, status, and coarse error category. It intentionally excludes message text and raw errors.
 - `benchmark_runs`, `benchmark_cases`, and `benchmark_outputs`: reproducible experiment configuration, anonymized speaker/prompt cases, and paired model outputs.
 - `benchmark_scores` and `benchmark_ratings`: versioned automated metrics and blind human listening-test observations.
+- `benchmark_review_surveys`, `benchmark_review_invites`, `benchmark_review_items`, and `benchmark_review_responses`: private study lifecycle, hashed invite access, reviewer-specific counterbalancing, and resumable A/B choices.
 - `request_limits`: expiring counters for authenticated recording-upload abuse protection; raw network addresses are never stored.
 
 Audio bytes are never stored in D1. Each recording points to a private R2 object key. API handlers verify ownership before returning or changing metadata and objects.
@@ -67,6 +69,8 @@ Deleting a voice is an owner-checked cascading application operation: it removes
 Email/password credentials use the authentication library's password hashing and are never stored in plaintext. Google access, refresh, and ID tokens are encrypted at rest with AES-256-GCM; a migration removes legacy plaintext provider tokens. Verification identifiers are hashed. Sessions expire after seven days, refresh at most daily, and use HTTP-only, same-site cookies that become secure-only in production. Sensitive operations require a session created within the last 15 minutes unless the user confirms their password. Google OAuth is enabled only when both provider credentials are present; its implicit signup path creates a D1 user and provider account for a first-time identity. Same-email linking requires verified identities and different-email linking is disabled. Production also requires a high-entropy authentication secret and an explicit public base URL.
 
 Reference recordings and requested text are sent to the configured speech provider when generating. For multilingual keepsakes, the English source message is sent to Google Cloud Translation and the result is sent directly to the speech provider. Provider credentials stay server-side. Mock modes require separate explicit opt-ins so an accidental environment-value change cannot silently enable either one. Production password registration is disabled unless verified email delivery is configured; Google remains the public pilot's account-creation path while existing password users retain access.
+
+Benchmark reviewers receive separate high-entropy links instead of accounts. D1 stores only each token's SHA-256 digest; raw links stay in the Git-ignored private benchmark directory. Review item rows retain the provider mapping for scoring, while the public API returns only anonymous A/B slots. Every audio request revalidates both the invite and item before streaming a private R2 object, and review responses use no-store, no-index, and no-referrer controls.
 
 The guided recorder uses the Web Audio API only inside the browser to measure microphone energy. Its adaptive noise threshold and faster pacing model are an activity-based guide rather than semantic transcription. After capture, the client mixes the signal to mono, trims leading and trailing silence, applies bounded level normalization and short edge fades, and encodes a 16-bit PCM WAV. It does not transcribe the prompt or send live microphone data to a speech-recognition service. Prepared bytes are uploaded only when the user explicitly saves the form.
 

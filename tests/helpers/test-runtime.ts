@@ -10,6 +10,7 @@ const migrations = [
   '../../drizzle/0004_low_molly_hayes.sql',
   '../../drizzle/0005_public_pilot_limits.sql',
   '../../drizzle/0006_benchmark_foundation.sql',
+  '../../drizzle/0007_pairwise_review.sql',
 ];
 
 export async function createTestRuntime() {

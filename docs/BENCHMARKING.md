@@ -15,7 +15,7 @@ For every output, collect:
 1. **Speaker similarity:** cosine similarity between the source and generated speaker embeddings. SpeechBrain's ECAPA-TDNN model provides embeddings and performs verification with cosine distance. Treat this as a supporting signal rather than identity ground truth, especially across languages.
 2. **Intelligibility:** word error rate from a pinned Whisper model against the exact prompt. Use character error rate for languages where word segmentation is not stable. Whisper's own model card documents uneven accuracy across languages and accents, so report results by language rather than combining them blindly.
 3. **Predicted naturalness:** UTMOS predicted mean-opinion score. This is a scalable model estimate, not a replacement for listener ratings.
-4. **Human ratings:** blind 1–5 ratings for speaker similarity, naturalness, and pronunciation accuracy. Randomize model order and hide provider/model names. Use at least three ratings per output; when practical, include the source speaker as one reviewer for identity similarity.
+4. **Human preferences:** provider-blinded A/B choices for speaker similarity, naturalness, and pronunciation accuracy, with an “about the same” option. Randomize model order independently for each reviewer. Use at least three reviewers per pair; when practical, include the source speaker as one reviewer for identity similarity.
 5. **Operational metrics:** end-to-end and stage latency, output bytes, failure rate, provider, model version, and target language. WithYou captures these automatically in `generation_runs` without storing the requested message in analytics.
 
 Primary implementation references:
@@ -137,7 +137,27 @@ npm run benchmark:prepare-review -- --run-id=<private-run-id>
 
 The evaluator decodes every output and held-out reference to mono 16-bit PCM at 16 kHz. It computes cosine similarity from SpeechBrain's `spkrec-ecapa-voxceleb` embeddings, uses OpenAI Whisper `base.en` with JiWER to calculate normalized WER and CER, and uses the official UTMOSv2 `fusion_stage3` model to estimate naturalness. It records evaluator configurations, the resolved SpeechBrain model revision, and package versions; checkpoints after every clip; and exports private per-clip CSV/JSON plus a de-identified aggregate summary. The reference recording is processed locally and never uploaded.
 
-The listening-review command creates a private package containing opaque candidate IDs, provider-blinded WAV files, three independently randomized CSV response forms, a scoring rubric, and a separate answer key. Give each reviewer only one response form and the audio folder. Never share the answer key until ratings are final, and do not place completed forms or review audio in Git.
+The listening-review command creates a private package containing opaque candidate IDs, provider-blinded WAV files, three independently randomized CSV response forms, a scoring rubric, and a separate answer key. The CSV files remain an offline fallback; the preferred reviewer experience is the private pairwise survey below. Never share the answer key until ratings are final, and do not place completed forms or review audio in Git.
+
+### One-link human review
+
+The web survey reduces the review from 48 separate spreadsheet rows to 24 paired comparisons. Each screen plays the real held-out reference and anonymous Voice A/Voice B versions of the same prompt, then asks three one-click questions. Reviewer order and A/B orientation are independently randomized, progress saves after every response, and a reviewer can safely resume from the same link.
+
+Prepare and publish it from the repository root:
+
+```bash
+# Inspect the planned case and reviewer counts without changing Cloudflare.
+npm run benchmark:publish-review -- --run-id=<private-run-id> --reviewers=3
+
+# Apply the survey schema once, deploy the UI, then upload private audio and seed links.
+npx wrangler d1 execute withyou-production --remote --file drizzle/0007_pairwise_review.sql --yes
+npm run deploy:production
+npm run benchmark:publish-review -- --run-id=<private-run-id> --reviewers=3 --production --execute
+```
+
+The publisher writes the reviewer URLs to `benchmarks/private/runs/<run-id>/analysis/listening-review-v1/pairwise-survey-v1/private-links.json`. That file is inside the Git-ignored private tree. Send a different URL to each reviewer; reviewers do not need a WithYou or provider account. Do not post the links publicly, forward the answer key, or share the raw audio folder. Closing a study requires setting its survey status to `closed`; token access then stops immediately.
+
+Provider labels are stored only in D1 for later scoring and are never returned by the reviewer API. Audio remains in private R2 and is streamed only after the invite token and item ownership are verified. Survey pages are marked no-index/no-referrer, all API responses are private/no-store, and only token hashes are persisted in D1.
 
 ## Database design
 
@@ -148,6 +168,9 @@ erDiagram
   GENERATION_RUNS ||--o| BENCHMARK_OUTPUTS : measures
   BENCHMARK_OUTPUTS ||--o{ BENCHMARK_SCORES : automated
   BENCHMARK_OUTPUTS ||--o{ BENCHMARK_RATINGS : human
+  BENCHMARK_REVIEW_SURVEYS ||--o{ BENCHMARK_REVIEW_INVITES : distributes
+  BENCHMARK_REVIEW_INVITES ||--o{ BENCHMARK_REVIEW_ITEMS : randomizes
+  BENCHMARK_REVIEW_ITEMS ||--o| BENCHMARK_REVIEW_RESPONSES : records
 
   BENCHMARK_RUNS {
     text prompt_set_version
@@ -179,10 +202,10 @@ erDiagram
   }
 ```
 
-`benchmark_scores` uses one row per metric and evaluator version so new metrics can be added without a schema migration. Human ratings remain separate because they have different provenance and aggregation rules. `generation_runs` deliberately stores counts, timings, model identity, status, and coarse error categories—but no transcript, raw error message, credential, or audio.
+`benchmark_scores` uses one row per metric and evaluator version so new metrics can be added without a schema migration. Human ratings remain separate because they have different provenance and aggregation rules. The review survey tables add tokenized distribution, reviewer-specific A/B counterbalancing, and resumable pairwise choices without exposing provider identity. `generation_runs` deliberately stores counts, timings, model identity, status, and coarse error categories—but no transcript, raw error message, credential, or audio.
 
 ## Analysis and reporting
 
 Report the median and interquartile range per model for similarity, naturalness, intelligibility, and latency. Also show paired per-speaker differences so one unusually easy voice cannot dominate the average. Include failure rate and sample count. Do not claim statistical significance from three to five speakers; describe the result as an initial controlled evaluation and publish the protocol, prompt version, evaluator versions, and limitations alongside the chart.
 
-The next implementation step is a benchmark runner that writes the existing schema, generates both model outputs with idempotent case IDs, then runs pinned local evaluators and exports a de-identified CSV for charts.
+After all links are complete, the next analysis step is to decode A/B choices through the server-side provider mapping, aggregate paired preference rates with ties reported separately, and publish only de-identified totals alongside the automated results.

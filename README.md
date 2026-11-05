@@ -33,6 +33,7 @@ The current portfolio MVP runs on Cloudflare Workers with D1 metadata, private R
 - Enforce per-owner access, same-origin writes, daily generation limits, and per-voice generation locks.
 - Reject files whose bytes do not match an allowed audio format, throttle recording uploads, and provide an operator generation kill switch.
 - Store metadata in Cloudflare D1 and private audio objects in Cloudflare R2.
+- Run private, provider-blinded A/B listening studies through tokenized reviewer links with randomized voice order and resumable responses.
 - Test validation, provider behavior, API/data boundaries, and the primary browser journey.
 
 ## Product Decisions & Tradeoffs
@@ -90,6 +91,7 @@ npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0004_low_molly_hayes.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0005_public_pilot_limits.sql
 npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0006_benchmark_foundation.sql
+npx wrangler d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0007_pairwise_review.sql
 npm run dev
 ```
 
