@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./memory-thread.css";
+import "./product-system.css";
 
 export const metadata: Metadata = {
   title: "WithYou — Voice keepsakes",

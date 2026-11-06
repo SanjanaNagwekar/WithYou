@@ -1,56 +1,49 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight, AudioLines, FlaskConical, LockKeyhole, Users } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, LockKeyhole, Users } from 'lucide-react';
+import { ResearchDecisionChart } from '@/components/research-decision-chart';
+import { ResearchListeningChart } from '@/components/research-listening-chart';
+import { WithYouBrand } from '@/components/withyou-brand';
 
 export const metadata: Metadata = {
   title: 'Voice Research — WithYou',
   description: 'How WithYou compared Cartesia and ElevenLabs through automated evaluation and provider-blinded listening.',
 };
 
-const results = [
-  { label: 'Speaker similarity', question: 'Sounds like the reference person', cartesia: 48, eleven: 5, tie: 19 },
-  { label: 'Naturalness', question: 'Sounds natural and human', cartesia: 38, eleven: 2, tie: 32 },
-  { label: 'Pronunciation', question: 'Clear and accurate pronunciation', cartesia: 6, eleven: 16, tie: 50 },
-];
-
-function percent(value: number) {
-  return `${((value / 72) * 100).toFixed(1)}%`;
-}
-
 export default function ResearchPage() {
   return (
     <div className="research-page">
       <header className="research-header">
-        <Link className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</Link>
+        <WithYouBrand />
         <Link className="research-back" href="/"><ArrowLeft size={14} /> Back home</Link>
       </header>
       <main>
         <section className="research-hero">
-          <span className="eyebrow">PRODUCT RESEARCH · VOICE MODEL EVALUATION</span>
-          <h1>Choosing a voice model with <em>evidence.</em></h1>
-          <p>WithYou compared Cartesia and ElevenLabs using the same consented speakers, enrollment recordings, prompts, and delivery settings—then combined automated measurements with a provider-blinded human study.</p>
+          <div className="research-hero-grid">
+            <div className="research-hero-copy">
+              <span className="eyebrow">PRODUCT RESEARCH · VOICE MODEL EVALUATION</span>
+              <h1>Choosing a voice model with <em>evidence.</em></h1>
+              <p>WithYou compared Cartesia and ElevenLabs using the same consented speakers, enrollment recordings, prompts, and delivery settings—then combined automated measurements with a provider-blinded human study.</p>
+            </div>
+            <div className="research-signal" aria-label="Animated visualization of a blinded voice comparison">
+              <header><span><i /> BLINDED LISTENING SIGNAL</span><small>A / B</small></header>
+              <div className="research-signal-field" aria-hidden="true">
+                {Array.from({ length: 31 }, (_, index) => <i key={index} style={{ height: `${24 + ((index * 17) % 61)}%`, animationDelay: `${(index % 9) * -0.12}s` }} />)}
+                <b />
+              </div>
+              <footer><span>REFERENCE</span><span>ANONYMOUS OUTPUTS</span><span>DECISION</span></footer>
+            </div>
+          </div>
           <div className="research-facts"><span><strong>4</strong> consented speakers</span><span><strong>24</strong> paired cases</span><span><strong>3</strong> blind reviewers</span><span><strong>216</strong> listening decisions</span></div>
         </section>
         <section className="research-results" aria-labelledby="human-results">
           <div className="research-section-heading"><div><span className="eyebrow">HUMAN EVALUATION</span><h2 id="human-results">What listeners heard</h2></div><p>Every reviewer heard the real held-out reference plus anonymous Voice A and Voice B. Provider order was independently randomized for every reviewer.</p></div>
-          <div className="research-legend" aria-label="Chart legend"><span className="cartesia">Cartesia</span><span className="eleven">ElevenLabs</span><span className="tie">Tie</span></div>
-          <div className="research-chart">
-            {results.map((result) => (
-              <article key={result.label}>
-                <div><strong>{result.label}</strong><small>{result.question}</small></div>
-                <div className="research-bar" aria-label={`${result.label}: ${result.cartesia} Cartesia, ${result.eleven} ElevenLabs, ${result.tie} ties`}>
-                  <span className="cartesia" style={{ width: percent(result.cartesia) }}><b>{percent(result.cartesia)}</b></span>
-                  <span className="eleven" style={{ width: percent(result.eleven) }}><b>{result.eleven > 4 ? percent(result.eleven) : ''}</b></span>
-                  <span className="tie" style={{ width: percent(result.tie) }}><b>{percent(result.tie)}</b></span>
-                </div>
-                <p>{result.cartesia} Cartesia · {result.eleven} ElevenLabs · {result.tie} ties</p>
-              </article>
-            ))}
-          </div>
+          <ResearchListeningChart />
         </section>
         <section className="research-decision">
-          <div><span className="research-icon"><FlaskConical /></span><span className="eyebrow">PRODUCT DECISION</span><h2>Cartesia remains the quality-gated choice.</h2><p>Cartesia received 48 of 53 non-tied speaker-similarity preferences and 38 of 40 non-tied naturalness preferences. It also had stronger automated speaker similarity and lower median latency. Because recognizability is WithYou’s core promise, those signals outweigh a marginal proxy score in isolation.</p></div>
-          <dl><div><dt>Similarity preference</dt><dd>90.6%</dd><span>Cartesia, excluding ties</span></div><div><dt>Naturalness preference</dt><dd>95.0%</dd><span>Cartesia, excluding ties</span></div><div><dt>Median latency</dt><dd>604 ms</dd><span>faster with Cartesia</span></div></dl>
+          <header><span className="eyebrow">PRODUCT DECISION · THE SIGNAL THAT MATTERS</span><h2>The result holds across the two questions that matter most.</h2><p>The same provider led on both recognizability and naturalness. Hover or tap the chart to inspect the exact non-tied preference counts behind each point.</p></header>
+          <ResearchDecisionChart />
+          <div className="decision-conclusion"><span>THE DECISION</span><strong>Cartesia remains the quality-gated choice.</strong><p>It led the identity and naturalness comparisons, produced stronger automated speaker similarity, and generated audio faster in the initial benchmark.</p></div>
         </section>
         <section className="research-method">
           <div className="research-section-heading"><div><span className="eyebrow">HOW THE STUDY WORKED</span><h2>Designed to reduce bias.</h2></div><p>The survey was built into WithYou rather than conducted through a spreadsheet, making the evaluation faster for reviewers and reproducible for future model experiments.</p></div>
@@ -62,7 +55,11 @@ export default function ResearchPage() {
         </section>
         <p className="research-limit">This was a controlled initial evaluation, not a population-level statistical claim. Raw audio, participant identities, provider voice IDs, consent records, and reviewer tokens remain private.</p>
       </main>
-      <footer className="research-footer"><Link href="/">WithYou</Link><Link href="/privacy">Privacy</Link><a href="https://github.com/SanjanaNagwekar/WithYou">Source</a></footer>
+      <footer className="product-footer">
+        <WithYouBrand className="inverted" />
+        <p>Evidence before novelty. Care before scale.</p>
+        <div><Link href="/">Home</Link><Link href="/privacy">Privacy</Link><a href="https://github.com/SanjanaNagwekar/WithYou">Source</a></div>
+      </footer>
     </div>
   );
 }

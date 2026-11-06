@@ -40,6 +40,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VoiceRecorder } from '@/components/voice-recorder';
+import { WithYouBrand } from '@/components/withyou-brand';
 import { authClient } from '@/lib/auth-client';
 import {
   keepsakeLanguageName,
@@ -405,9 +406,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
   return (
     <div className="shell">
       <header className="studio-header">
-        {/* vinext's development Link shim can load a second React copy after hot reload. */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</a>
+        <WithYouBrand />
         <div className="account-summary">
           <span><LockKeyhole size={14} /><span><strong>{user.displayName}</strong><small>{user.email}</small></span></span>
           <a href="/account" aria-label="Account settings"><UserRound size={15} /></a>
@@ -599,7 +598,7 @@ export default function Home({ user }: { user: { displayName: string; email: str
           </section>
         )}
 
-        <footer><span className="brand small"><AudioLines size={18} /> WithYou</span><p>Made for memories. Held with care.</p><span>PRIVATE MVP · AI AUDIO IS LABELED</span></footer>
+        <footer><WithYouBrand className="small" /><p>Made for memories. Held with care.</p><span>PRIVATE MVP · AI AUDIO IS LABELED</span></footer>
       </main>
 
       <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) setCreateRecording(null); }}>

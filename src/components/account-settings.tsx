@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, KeyRound, Link2, LockKeyhole, LogOut, Trash2, UserRound } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
+import { WithYouBrand } from '@/components/withyou-brand';
 
 type AccountUser = {
   displayName: string;
@@ -113,8 +114,7 @@ export function AccountSettings({ user }: { user: AccountUser }) {
   return (
     <main className="account-page">
       <header className="account-header">
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand" href="/" aria-label="WithYou home"><LockKeyhole /> WithYou</a>
+        <WithYouBrand />
         <a className="account-back" href="/studio"><ArrowLeft size={15} /> Back to library</a>
       </header>
 

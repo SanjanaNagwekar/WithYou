@@ -1,13 +1,19 @@
-import { ArrowUpRight, AudioLines, Heart, LockKeyhole, Mic, WandSparkles } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUpRight,
+  Check,
+  FlaskConical,
+  Globe2,
+  LockKeyhole,
+  Mic2,
+  Sparkles,
+} from 'lucide-react';
 import { getAuthenticatedUser } from '@/app/auth';
+import { KeepsakeJourney } from '@/components/keepsake-journey';
+import { LivingSignal } from '@/components/living-signal';
+import { WithYouBrand } from '@/components/withyou-brand';
 
 export const dynamic = 'force-dynamic';
-
-const steps = [
-  { number: '01', title: 'Preserve a voice', copy: 'Upload a meaningful recording or capture a clear guided sample in the moment.', icon: Mic },
-  { number: '02', title: 'Write what matters', copy: 'Turn a favorite phrase, reassurance, or memory into a private voice keepsake.', icon: Heart },
-  { number: '03', title: 'Listen and keep', copy: 'Shape the feeling and delivery, then return to your saved collection anytime.', icon: WandSparkles },
-];
 
 export default async function LandingPage() {
   const user = await getAuthenticatedUser();
@@ -15,122 +21,137 @@ export default async function LandingPage() {
   const primaryLabel = user ? 'Open your library' : 'Create your private library';
 
   return (
-    <div className="landing-page">
-      <header className="landing-header">
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</a>
-        <nav className="landing-nav" aria-label="Primary navigation">
-          <a href="#how-it-works">How it works</a>
+    <div className="signal-page">
+      <header className="signal-header">
+        <WithYouBrand />
+        <nav className="signal-nav" aria-label="Primary navigation">
           <a href="/research">Research</a>
-          <a href="/privacy">Privacy</a>
-          {user ? (
-            <a className="landing-nav-cta" href="/studio">Open library <ArrowUpRight size={14} /></a>
-          ) : (
-            <>
-              <a href="/sign-in?return_to=%2Fstudio">Sign in</a>
-              <a className="landing-nav-cta" href="/sign-in?return_to=%2Fstudio">Get started <ArrowUpRight size={14} /></a>
-            </>
-          )}
+          {user ? null : <a href="/sign-in?return_to=%2Fstudio">Sign in</a>}
+          <a className="signal-nav-cta" href={primaryHref}>
+            {user ? 'Open library' : 'Enter the studio'} <ArrowUpRight size={14} />
+          </a>
         </nav>
       </header>
 
-      <main className="landing-main">
-        <section className="landing-hero">
-          <div className="landing-hero-copy">
-            <span className="eyebrow">A PRIVATE HOME FOR FAMILIAR VOICES</span>
+      <main className="signal-main">
+        <section className="signal-hero">
+          <div className="signal-hero-copy">
             <h1>Keep the voices<br />that feel like <em>home.</em></h1>
-            <p>Preserve meaningful recordings and create personal voice keepsakes you can return to whenever you need them.</p>
-            <div className="landing-actions">
-              <a className="primary landing-primary" href={primaryHref}>{primaryLabel} <ArrowUpRight size={15} /></a>
-              <a className="landing-secondary" href="#how-it-works">See how it works</a>
-            </div>
-            <div className="landing-trust-row">
-              <span><LockKeyhole size={13} /> Private account</span>
-              <span><Heart size={13} /> Consent first</span>
-              <span><AudioLines size={13} /> AI audio labeled</span>
+            <p className="signal-hero-lede">Preserve the voices of the people you love—and create personal keepsakes for the words you never want time to take away.</p>
+            <div className="signal-actions">
+              <a className="signal-primary" href={primaryHref}>{primaryLabel} <ArrowUpRight size={16} /></a>
+              <a className="signal-text-link" href="#how-it-works">Explore the system <ArrowDown size={14} /></a>
             </div>
           </div>
 
-          <div className="landing-visual" aria-label="Voice keepsake preview">
-            <div className="landing-orbit orbit-one" />
-            <div className="landing-orbit orbit-two" />
-            <div className="landing-preview-card">
-              <div className="landing-preview-label"><span>VOICE KEEPSAKE</span><LockKeyhole size={13} /></div>
-              <div className="landing-preview-person"><span>S</span><div><strong>Someone special</strong><small>A familiar voice, kept close</small></div></div>
-              <div className="landing-wave" aria-hidden="true">
-                {Array.from({ length: 37 }, (_, index) => (
-                  <i key={index} style={{ height: Math.round(12 + Math.sin(index * 0.64) ** 2 * 48 + Math.sin(index * 0.19) ** 2 * 22) }} />
-                ))}
+          <LivingSignal />
+
+          <div className="signal-hero-foot">
+            <span><i /> Permission first</span><span><i /> Yours alone</span><span><i /> Recreated audio labeled</span>
+          </div>
+        </section>
+
+        <section className="journey-section" id="how-it-works">
+          <div className="journey-intro">
+            <h2 className="journey-title">How a keepsake is made.</h2>
+            <div className="journey-intro-rail">
+              <p className="journey-subtitle">From a recording to something you can hold onto.</p>
+              <i aria-hidden="true" />
+              <p className="journey-description">Press play to follow one message from a real recording to a private keepsake—or choose any moment to explore it yourself.</p>
+            </div>
+          </div>
+          <KeepsakeJourney />
+        </section>
+
+        <section className="signal-system" id="system">
+          <div className="signal-system-copy">
+            <span className="signal-index light">03 / MADE WITH CARE</span>
+            <h2>Tender by design.<br /><em>Thoughtful underneath.</em></h2>
+            <p>The experience stays gentle because the system does the difficult work quietly: local audio preparation, authenticated ownership boundaries, private storage, controlled voice generation, and evidence-led quality checks.</p>
+            <a href="/research">Open the research brief <ArrowUpRight size={15} /></a>
+          </div>
+          <div className="signal-pipeline" aria-label="WithYou technical pipeline">
+            <div className="pipeline-row source"><span>01</span><div><small>INPUT</small><strong>Consented recording</strong></div><Mic2 /></div>
+            <div className="pipeline-connector"><i /><span>TRIM · NORMALIZE · PCM WAV</span><i /></div>
+            <div className="pipeline-row processing"><span>02</span><div><small>VOICE ENGINE</small><strong>Quality-gated synthesis</strong></div><Sparkles /></div>
+            <div className="pipeline-split"><i /><span>OWNER-CHECKED ROUTES</span><i /></div>
+            <div className="pipeline-outputs">
+              <div><Globe2 /><small>15 LOCALIZED<br />VOICE PATHS</small></div>
+              <div><LockKeyhole /><small>PRIVATE R2<br />AUDIO OBJECTS</small></div>
+              <div><FlaskConical /><small>BLINDED<br />EVALUATION</small></div>
+            </div>
+          </div>
+        </section>
+
+        <section className="signal-evidence" id="evidence">
+          <div className="signal-evidence-heading">
+            <span className="signal-evidence-kicker">INSIDE THE LISTENING ROOM</span>
+            <h2>Care deserves more than a demo.</h2>
+            <p>We did not choose a voice provider from a polished sample. We compared the same recordings and prompts, measured the system, and asked listeners which result still felt most recognizable.</p>
+          </div>
+          <div className="signal-stats">
+            <article>
+              <header className="metric-header"><span>01</span><span>Speaker similarity</span></header>
+              <div className="metric-result">
+                <div className="metric-value"><strong>48</strong><small>/53</small></div>
+                <p>listener<br />preferences</p>
               </div>
-              <blockquote>“A little reminder that you are loved, always.”</blockquote>
-              <div className="landing-preview-meta"><span>Warm</span><span>Private</span><span>Saved</span></div>
+              <p className="metric-detail">Cartesia led the non-tied speaker-similarity comparisons.</p>
+            </article>
+            <article>
+              <header className="metric-header"><span>02</span><span>Study design</span></header>
+              <div className="metric-result">
+                <div className="metric-value"><strong>24</strong></div>
+                <p>paired<br />cases</p>
+              </div>
+              <p className="metric-detail">The same prompts and enrollment audio were used across providers.</p>
+            </article>
+            <article>
+              <header className="metric-header"><span>03</span><span>Initial benchmark</span></header>
+              <div className="metric-result">
+                <div className="metric-value"><strong>1,126</strong><small>ms</small></div>
+                <p>median<br />generation</p>
+              </div>
+              <p className="metric-detail">Median generation latency measured in the initial benchmark.</p>
+            </article>
+          </div>
+          <a className="signal-research-link" href="/research"><span>Read how the model decision was made</span><ArrowUpRight /></a>
+        </section>
+
+        <section className="signal-language" id="languages">
+          <div className="signal-language-marquee" aria-hidden="true">
+            <span>ENGLISH</span><i /><span>ESPAÑOL</span><i /><span>FRANÇAIS</span><i /><span>हिन्दी</span><i /><span>日本語</span><i /><span>PORTUGUÊS</span>
+          </div>
+          <div className="signal-language-body">
+            <div className="signal-language-intro">
+              <span className="signal-language-kicker">ONE VOICE · FIFTEEN SUPPORTED PATHS</span>
+              <h2>Love rarely lives<br /><em>in just one language.</em></h2>
+              <p>Choose from 15 supported languages while preserving the selected voice. Quality-gated translation keeps every option tied to a dedicated voice path—not an unlimited language claim.</p>
+              <span className="signal-verified"><Check size={14} /> QUALITY-GATED TRANSLATION</span>
+            </div>
+            <div className="signal-language-route" aria-label="One familiar voice connected to fifteen supported language paths">
+              <div><small>FAMILIAR VOICE</small><strong>Someone special</strong></div>
+              <span aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><b /></span>
+              <div><small>SUPPORTED PATHS</small><strong>15</strong></div>
+            </div>
+            <div className="signal-language-list" aria-label="Example supported languages">
+              <span>English</span><span>Español</span><span>Français</span><span>हिन्दी</span><span>日本語</span><span>Português</span>
             </div>
           </div>
         </section>
 
-        <section className="landing-purpose">
-          <p>Some moments deserve more than a place in your camera roll.</p>
-          <strong>WithYou gives meaningful voices a private place to stay.</strong>
-        </section>
-
-        <section className="landing-how" id="how-it-works">
-          <div className="landing-section-heading">
-            <span className="eyebrow">HOW IT WORKS</span>
-            <h2>From a recording to something you can hold onto.</h2>
-            <p>A gentle, guided flow designed to make each step clear.</p>
-          </div>
-          <div className="landing-steps">
-            {steps.map(({ number, title, copy, icon: Icon }) => (
-              <article key={number}>
-                <div><span>{number}</span><Icon size={19} /></div>
-                <h3>{title}</h3>
-                <p>{copy}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="landing-private" id="privacy">
-          <div>
-            <span className="landing-lock"><LockKeyhole /></span>
-            <span className="eyebrow">BUILT WITH CARE</span>
-            <h2>Your memories belong to you.</h2>
-            <p>Your library is tied to your account. Recordings are stored privately, voice recreation requires explicit permission, and generated audio is clearly identified.</p>
-          </div>
-          <ul>
-            <li><span>01</span><div><strong>Private by default</strong><p>Audio is served through authenticated, owner-checked routes.</p></div></li>
-            <li><span>02</span><div><strong>You stay in control</strong><p>Download, replace, or permanently remove voices and keepsakes.</p></div></li>
-            <li><span>03</span><div><strong>Transparent recreation</strong><p>Synthetic keepsakes are labeled so originals and recreations stay distinct.</p></div></li>
-          </ul>
-        </section>
-
-        <section className="landing-roadmap">
-          <div>
-            <span className="eyebrow">ACROSS LANGUAGES</span>
-            <h2>Familiar words, in more languages.</h2>
-            <p>Choose a language for a keepsake while preserving the selected voice—designed for families whose memories cross borders and generations.</p>
-          </div>
-          <div className="language-preview" aria-label="Language selection preview">
-            <span>KEEPSAKE LANGUAGE</span>
-            <strong>English <span>⌄</span></strong>
-            <p>Quality-gated translation keeps every supported language tied to a dedicated localized voice.</p>
-          </div>
-        </section>
-
-        <section className="landing-final">
-          <AudioLines />
-          <h2>Keep something meaningful close.</h2>
-          <p>Start with one voice and one moment worth remembering.</p>
-          <a className="primary landing-primary" href={primaryHref}>{primaryLabel} <ArrowUpRight size={15} /></a>
+        <section className="signal-final">
+          <span className="signal-final-label">A PRIVATE PLACE TO REMEMBER</span>
+          <h2>Keep a little<br /><em>of them close.</em></h2>
+          <p>Begin with one voice and one moment that still feels like home.</p>
+          <a className="signal-final-cta" href={primaryHref}><span>{primaryLabel}</span><ArrowUpRight /></a>
         </section>
       </main>
 
-      <footer className="landing-footer">
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand small" href="/"><AudioLines /> WithYou</a>
+      <footer className="signal-footer">
+        <WithYouBrand className="inverted" />
         <p>Made for memories. Held with care.</p>
-        <div className="landing-footer-links"><a href="/research">Research</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div>
-        <span>PRIVATE VOICE KEEPSAKES · AI AUDIO IS LABELED</span>
+        <div><a href="/research">Research</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="https://github.com/SanjanaNagwekar/WithYou">Source</a></div>
       </footer>
     </div>
   );

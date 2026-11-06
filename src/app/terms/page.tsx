@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AudioLines, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { WithYouBrand } from '@/components/withyou-brand';
 
 export const metadata: Metadata = {
   title: 'Terms of Use — WithYou',
@@ -11,7 +12,7 @@ export default function TermsPage() {
   return (
     <div className="legal-page">
       <header className="legal-header">
-        <Link className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</Link>
+        <WithYouBrand />
         <Link className="legal-back" href="/"><ArrowLeft size={14} /> Back home</Link>
       </header>
       <main className="legal-content">
@@ -28,7 +29,11 @@ export default function TermsPage() {
         <section><h2>Deletion and termination</h2><p>You can delete content or your account through the application. WithYou may suspend access when reasonably necessary to address abuse, security, provider requirements, or legal obligations. Provisions concerning permission, prohibited uses, responsibility, and limitations continue to apply to prior use.</p></section>
         <section><h2>Contact</h2><p>Questions or responsible-use concerns can be sent to <a href="mailto:sanjana.nagwekar1@gmail.com">sanjana.nagwekar1@gmail.com</a>. Never email passwords, access tokens, or private recordings.</p></section>
       </main>
-      <footer className="legal-footer"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/">WithYou</Link></footer>
+      <footer className="product-footer">
+        <WithYouBrand className="inverted" />
+        <p>Made for memories. Held with care.</p>
+        <div><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/">Home</Link></div>
+      </footer>
     </div>
   );
 }

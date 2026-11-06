@@ -1,5 +1,6 @@
-import { AudioLines, LockKeyhole } from 'lucide-react';
+import { LockKeyhole } from 'lucide-react';
 import { ResetPasswordForm } from '@/components/reset-password-form';
+import { WithYouBrand } from '@/components/withyou-brand';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +16,7 @@ export default async function ResetPasswordPage({
   return (
     <main className="auth-page">
       <section className="auth-story">
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</a>
+        <WithYouBrand />
         <div><span className="eyebrow">PRIVATE ACCOUNT RECOVERY</span><h1>Return to the voices<br /><em>that matter.</em></h1><p>Choose a new password for your private library.</p></div>
         <p className="auth-trust"><LockKeyhole size={15} /> Secure, one-time recovery link</p>
       </section>

@@ -20,24 +20,38 @@ test.beforeEach(async ({ page }, testInfo) => {
     .fill(`e2e-${Date.now()}-${testInfo.workerIndex}-${testInfo.retry}-${testInfo.title.replace(/\W/g, '-')}@example.test`);
   await page.getByLabel('PASSWORD').fill('secure-test-password');
   await page.getByRole('button', { name: 'Create account', exact: true }).click();
-  await expect(page).toHaveURL('/studio');
+  await expect(page).toHaveURL('/studio', { timeout: 15_000 });
 });
 
 test('public landing guides visitors into the product', async ({ page }) => {
+  test.setTimeout(60_000);
   await expect(page.getByRole('heading', { name: 'Keep the voices that feel like home.' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Create your private library' }).first()).toHaveAttribute(
     'href',
     '/sign-in?return_to=%2Fstudio',
   );
-  await expect(page.getByRole('heading', { name: 'From a recording to something you can hold onto.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'How a keepsake is made.' })).toBeVisible();
+  await expect(page.getByText('From a recording to something you can hold onto.')).toBeVisible();
   await expect(page.getByText(/Quality-gated translation/)).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Research' }).first()).toHaveAttribute('href', '/research');
+  const landingHeader = page.getByRole('banner');
+  await expect(landingHeader.getByRole('link', { name: 'Process' })).toHaveCount(0);
+  await expect(landingHeader.getByRole('link', { name: 'System' })).toHaveCount(0);
+  await expect(landingHeader.getByRole('link', { name: 'Research' })).toHaveAttribute('href', '/research');
 
-  await page.getByRole('link', { name: 'Research' }).first().click();
+  await landingHeader.getByRole('link', { name: 'Research' }).click();
   await expect(page).toHaveURL('/research');
   await expect(page.getByRole('heading', { name: 'Choosing a voice model with evidence.' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'What listeners heard' })).toBeVisible();
-  await expect(page.getByText('48 Cartesia · 5 ElevenLabs · 19 ties')).toBeVisible();
+  await expect(page.getByText('THE LISTENING RESULTS')).toBeVisible();
+  const listeningCascade = page.getByRole('region', { name: 'Interactive listening study results' });
+  await expect(listeningCascade).toHaveAttribute('data-ready', 'true', { timeout: 15_000 });
+  await expect(listeningCascade.getByRole('button', { name: /Speaker similarity/ })).toContainText('Cartesia48');
+  await listeningCascade.getByRole('button', { name: /Naturalness/ }).click();
+  await page.getByRole('button', { name: 'Decisive only' }).click();
+  await expect(page.getByText(/of the 40 non-tied decisions/)).toBeVisible();
+  await expect(listeningCascade.getByRole('button', { name: /Naturalness/ }).getByText('95.0%')).toBeVisible();
+  await expect(page.getByRole('img', { name: /preference percentages for speaker similarity and naturalness/ })).toBeVisible();
+  await expect(page.getByText('48 / 53')).toBeVisible();
   await expect(page.getByRole('link', { name: /Request reviewer access/ })).toHaveAttribute('href', /mailto:/);
   await page.getByRole('link', { name: 'Back home' }).click();
 

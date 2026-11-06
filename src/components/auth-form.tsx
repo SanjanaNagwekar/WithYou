@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useSyncExternalStore } from 'react';
-import { useRouter } from 'next/navigation';
 import { AudioLines, LockKeyhole } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
+import { WithYouBrand } from '@/components/withyou-brand';
 
 type AuthMode = 'sign-in' | 'sign-up' | 'forgot-password';
 const subscribeToHydration = () => () => undefined;
@@ -25,7 +25,6 @@ export function AuthForm({
   initialNotice: string;
   returnTo: string;
 }) {
-  const router = useRouter();
   const hydrated = useSyncExternalStore(
     subscribeToHydration,
     getClientSnapshot,
@@ -78,8 +77,9 @@ export function AuthForm({
         setBusy(false);
         return;
       }
-      router.replace(returnTo);
-      router.refresh();
+      // The session cookie has changed. Load the server-validated return path
+      // with that cookie instead of racing a route replacement with refresh.
+      window.location.replace(returnTo);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'We could not sign you in.');
       setBusy(false);
@@ -111,9 +111,7 @@ export function AuthForm({
   return (
     <main className="auth-page">
       <section className="auth-story">
-        {/* The Vinext development Link shim can load a second React copy after hot reload. */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</a>
+        <WithYouBrand />
         <div>
           <span className="eyebrow">A PRIVATE PLACE FOR FAMILIAR VOICES</span>
           <h1>Keep what matters.<br /><em>Come back anytime.</em></h1>

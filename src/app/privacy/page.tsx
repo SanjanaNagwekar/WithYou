@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AudioLines, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { WithYouBrand } from '@/components/withyou-brand';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — WithYou',
@@ -11,7 +12,7 @@ export default function PrivacyPage() {
   return (
     <div className="legal-page">
       <header className="legal-header">
-        <Link className="brand" href="/" aria-label="WithYou home"><AudioLines /> WithYou</Link>
+        <WithYouBrand />
         <Link className="legal-back" href="/"><ArrowLeft size={14} /> Back home</Link>
       </header>
       <main className="legal-content">
@@ -27,7 +28,11 @@ export default function PrivacyPage() {
         <section><h2>Children</h2><p>WithYou is not directed to children under 13, and children should not create accounts or provide recordings.</p></section>
         <section><h2>Contact</h2><p>For privacy, access, or deletion questions, contact <a href="mailto:sanjana.nagwekar1@gmail.com">sanjana.nagwekar1@gmail.com</a>. Do not send private recordings or credentials by email.</p></section>
       </main>
-      <footer className="legal-footer"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/">WithYou</Link></footer>
+      <footer className="product-footer">
+        <WithYouBrand className="inverted" />
+        <p>Clear boundaries for meaningful voices.</p>
+        <div><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/">Home</Link></div>
+      </footer>
     </div>
   );
 }

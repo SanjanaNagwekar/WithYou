@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, AudioLines, Check, Headphones, LockKeyhole } from 'lucide-react';
+import { WithYouBrand } from '@/components/withyou-brand';
 
 type Choice = 'a' | 'b' | 'tie';
 type ResponseValue = { similarity: Choice; naturalness: Choice; pronunciation: Choice };
@@ -145,7 +146,7 @@ export function BlindReview({ token }: { token: string }) {
   if (!started && !finished) {
     return (
       <main className="review-shell">
-        <header className="review-brand"><AudioLines /> WithYou <span>VOICE STUDY</span></header>
+        <header className="review-brand"><WithYouBrand className="review-wordmark" /><span className="review-label">VOICE STUDY</span></header>
         <section className="review-intro">
           <span className="review-icon"><Headphones /></span>
           <p className="review-kicker">PRIVATE · PROVIDER-BLINDED</p>
@@ -177,7 +178,7 @@ export function BlindReview({ token }: { token: string }) {
   const percent = Math.round((completed / data.total) * 100);
   return (
     <main className="review-shell">
-      <header className="review-brand"><AudioLines /> WithYou <span>VOICE STUDY</span></header>
+      <header className="review-brand"><WithYouBrand className="review-wordmark" /><span className="review-label">VOICE STUDY</span></header>
       <section className="review-progress" aria-label={`${completed} of ${data.total} complete`}>
         <div><span>Comparison {index + 1} of {data.total}</span><strong>{percent}% complete</strong></div>
         <i><b style={{ width: `${percent}%` }} /></i>
